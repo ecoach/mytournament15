@@ -9,6 +9,7 @@ class Bracket(models.Model):
     # [12m_Bout]
     name = models.CharField(max_length=30, null=True, blank=True)
     manager = models.CharField(max_length=30, null=True, blank=True)
+    ready = models.NullBooleanField()
     finished = models.NullBooleanField()
 
     def get_bout(self, judge):
@@ -21,7 +22,7 @@ class Bracket(models.Model):
 class Competitor(models.Model):
     # [12m_Bout]
     bracket = models.ForeignKey(Bracket)
-    name = models.CharField(max_length=30, null=True, blank=True)
+    name = models.CharField(max_length=30, null=True, blank=True, unique=True)
     game = models.TextField(null=True, blank=True)
     wins = models.IntegerField(null=True, blank=True)
     losses = models.IntegerField(null=True, blank=True)
@@ -32,17 +33,17 @@ class Competitor(models.Model):
 class Judge(models.Model):
     # [12m_Bout]
     bracket = models.ForeignKey(Bracket)
-    name = models.CharField(max_length=30, null=True, blank=True)
+    name = models.CharField(max_length=30, null=True, blank=True, unique=True)
     eligable = models.IntegerField(null=True, blank=True)
     decisions = models.IntegerField(null=True, blank=True)
 
 class Bout(models.Model):
     bracket = models.ForeignKey(Bracket)
-    rnd = models.IntegerField(null=True, blank=True)
-    compA = models.ForeignKey(Competitor, related_name='compA')
-    compB = models.ForeignKey(Competitor, related_name='compB')
-    judge = models.ForeignKey(Judge, null=True)
+    bround = models.IntegerField(null=True, blank=True)
+    judge = models.ForeignKey(Judge, to_field='name', null=True)
+    compA = models.ForeignKey(Competitor, related_name='compA', to_field='name')
+    compB = models.ForeignKey(Competitor, related_name='compB', to_field='name')
+    winner = models.ForeignKey(Competitor, related_name='winner', to_field='name', null=True)
     btime = models.DateTimeField(null=True, blank=True)
-    winner = models.ForeignKey(Competitor, related_name='winner', null=True)
 
 
