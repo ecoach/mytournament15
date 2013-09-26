@@ -6,6 +6,7 @@ from django.conf import settings
 from mynav.nav import main_nav
 import loader
 from .managers import *
+from .forms import *
 
 # Create your views here.
 
@@ -49,16 +50,32 @@ def load_judges_view(request, **kwargs):
 
 def vote_view(request, **kwargs):
 
+    # load the manager
     if kwargs["bracket"] == '00':
         bracket = loader.bracket_00()
+    manager = eval(bracket.manager)(bracket=bracket)
+    
+    # run manager setup
+    manager.Setup(request.user.username) 
 
-    manager = eval(bracket.manager)()
-    ballot = manager.get_ballot()
-
+    # handle the form
+    if request.method == 'POST':
+        form = Voter_Form(
+            data=request.POST
+            vote_choices = manager.Vote_Choices(judge=request.user.username)
+        )
+        if form.is_valid():
+            f_vote = form.cleaned_data['vote']
+            manager.Record_Vote(request.user.username, f_vote)
+    form = Voter_Form(
+        initial={},
+        vote_choices = manager.Vote_Choices(judge=request.user.username)
+    )
     return render(request, 'mytournament/vote.html', {
         "main_nav": main_nav(request.user, 'student_linkback'),
         "bracket": kwargs["bracket"],
-        "ballot": ballot
+        "form": form,
+        "status": manager.Status()
     })
 
 

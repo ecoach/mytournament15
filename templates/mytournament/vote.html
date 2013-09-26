@@ -3,6 +3,7 @@
 
 {% block content %}
         <br>
+    <div class='row-fluid'>
         <div class='span3'>
         </div>
         <div class='span3'>
@@ -10,10 +11,90 @@
             <br>
             <br>
             Bracket id: {{bracket}}
-            <br>
-            Ballot: {{ballot}}
         </div>
     </div>
+
+    <hr>
+
+{% if vmessage == 'MESSAGE_NOVOTE' %}  
+<center>
+    You did not submit a video for the Exam 2 Redo in 240 and thus will not be asked to vote.
+</center>
+{% endif %} 
+
+{% if vmessage == 'MESSAGE_WAIT' %}  
+<center>
+    Hold your horses! (stop back in 1/2 an hour).
+    <br>
+    <br>
+    <table>
+    <tr><th>
+    Consider the following to understand why you have to wait:
+    </th></tr>
+    <tr><td>
+    <ol>
+    <li>
+    Voting must take place in rounds in order for the winners advance.
+    </li>
+    <li>
+    A new round of pairings can not be made until the previous round has completed.
+    </li>
+    <li>
+    The current round of pairings have already been distributed to voters who logged in before you.
+    </li>
+    </ol>
+    </td></tr></table>
+    <br>
+    <br>
+</center>
+{% endif %} 
+
+{% if vmessage == 'MESSAGE_THANKS' %}  
+<center>
+    Thanks for voting
+</center>
+{% endif %} 
+
+{% if vmessage == 'MESSAGE_WINNER' %}  
+<center>
+    winner of voting!
+</center>
+{% endif %} 
+
+{% if vmessage == 'MESSAGE_VOTE' %}  
+    Watch these two videos and vote for the one that presents a clearer solution:
+    <form action="{{exam_2_vote_survey.reverse}}" method="post" enctype="multipart/form-data">{% csrf_token %}
+
+        <ul>
+            <!-- 
+                messy snag from online example 
+                http://stackoverflow.com/questions/6218299/django-form-radio-input-layout
+            -->
+            {% for choice in form.vote.field.choices %}
+            <li>
+                <label for="id_{{ form.vote.html_name }}_{{ forloop.counter0 }}">
+                    <input type="radio"
+                        id="id_{{ form.vote.html_name }}_{{ forloop.counter0 }}"
+                        value="{{ choice.0 }}"
+                        name="{{ form.vote.html_name }}" />
+                    {{ choice.1|safe}}
+                    {% comment %}
+                    {% if choice.0 == 'one' %}
+                        {# Necessary field here #}
+                        {{ form.bar }}
+                    {% else %}
+                        No Textbox
+                    {% endif %}
+                    {% endcomment %}
+                </label>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <input type='submit' value='Submit Vote'></input>
+    </form>
+{% endif %} 
+
 
 
 {% endblock %}
