@@ -61,21 +61,24 @@ def vote_view(request, **kwargs):
     # handle the form
     if request.method == 'POST':
         form = Voter_Form(
-            data=request.POST
-            vote_choices = manager.Vote_Choices(judge=request.user.username)
+            data=request.POST,
+            vote_choices = manager.Vote_Choices(judge=request.user.username),
         )
         if form.is_valid():
-            f_vote = form.cleaned_data['vote']
-            manager.Record_Vote(request.user.username, f_vote)
+            bout = form.cleaned_data['bout']
+            decision = form.cleaned_data['vote']
+            manager.Record_Vote(bout, request.user.username, decision)
     form = Voter_Form(
-        initial={},
+        initial={
+            bout = manager.Bout_Id()
+        },
         vote_choices = manager.Vote_Choices(judge=request.user.username)
     )
     return render(request, 'mytournament/vote.html', {
         "main_nav": main_nav(request.user, 'student_linkback'),
         "bracket": kwargs["bracket"],
         "form": form,
-        "status": manager.Status()
+        "status": manager.Status(request.user)
     })
 
 
