@@ -1,0 +1,69 @@
+{% extends 'mytournament/base_tournament.html' %}
+
+{% block bottom %}
+    Got game?
+    <br>
+    <br>
+
+    <script type="text/javascript">
+       
+        var brot;
+        var grot;
+        var boy; 
+        var bcss;
+        var girl; 
+        var gcss;
+        jQuery(document).ready(function($) {
+            brot = 90;
+            grot = 90;
+            boy = jQuery('#rotating-boy');
+            girl = jQuery('#rotating-girl');
+            inc();
+        });
+        function inc()
+        {
+            brot += 20;
+            grot -= 20;
+            setTimeout(inc, 200); 
+            bcss = "transform:rotate("+brot+"deg); -ms-transform:rotate("+brot+"deg); -webkit-transform:rotate("+brot+"deg);"
+            gcss = "transform:rotate("+grot+"deg); -ms-transform:rotate("+grot+"deg); -webkit-transform:rotate("+grot+"deg);"
+            boy.attr('style', bcss);
+            girl.attr('style', gcss);
+        }
+    </script>
+
+<!-- 
+>-|{~:)
+-->
+    <table>
+        <tr>
+            <td>
+                <div id='rotating-boy' style="">
+                >-|:)
+                </div>
+            </td>
+            <td>
+                &nbsp;
+            </td>
+            <td>
+                <div id='rotating-girl' style="">
+                >-|:}
+                </div>
+            </td>
+            <td>
+                You can register your game here! 
+            </td>
+        </tr>
+    </table>
+    <br>
+    <form action="." method="post" enctype="multipart/form-data">{% csrf_token %}
+        {{form.as_p}}
+        <input type='submit' value='Submit Game'></input>
+        Game on record : {{game}}
+    </form>
+
+
+{% endblock %}
+
+
+

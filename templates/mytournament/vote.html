@@ -1,28 +1,12 @@
 {% extends 'mytournament/base_tournament.html' %}
 
-{% block content %}
-        <br>
-    <div class='row-fluid'>
-        <div class='span3'>
-        </div>
-        <div class='span3'>
-            This is where you'll actually vote
-            <br>
-            <br>
-            Bracket id: {{bracket}}
-        </div>
-    </div>
-
-    <hr>
+{% block bottom %}
 
 {% if status == 'MESSAGE_NON_PART' %}  
-<center>
     You are not yet a participant in the online voting for this tournament.
-</center>
 {% endif %} 
 
 {% if status == 'MESSAGE_WAIT' %}  
-<center>
     Hold your horses! (stop back in 1/2 an hour)
     <br>
     <br>
@@ -45,24 +29,19 @@
     </td></tr></table>
     <br>
     <br>
-</center>
 {% endif %} 
 
 {% if status == 'MESSAGE_THANKS' %}  
-<center>
     Thanks for voting
-</center>
 {% endif %} 
 
 {% if status == 'MESSAGE_WINNER' %}  
-<center>
     winner of voting!
-</center>
 {% endif %} 
 
 {% if status == 'MESSAGE_VOTE' %}  
     Review these two problems and vote for the one which <b><em>you think is going to be more important to understand </em></b> in order to do well on the upcoming exam.
-    <form action="{{exam_2_vote_survey.reverse}}" method="post" enctype="multipart/form-data">{% csrf_token %}
+    <form action="." method="post" enctype="multipart/form-data">{% csrf_token %}
 
         <ul>
             <!-- 
