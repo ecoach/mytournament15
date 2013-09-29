@@ -8,6 +8,23 @@ from .models import *
 from .forms import *
 
 # Create your views here.
+@staff_member_required
+def load_brackets_view(request, **kwargs):
+    # read bracket list from CSV file
+    import csv
+    file_path = settings.DIR_UPLOAD_DATA + 'tournaments/new_brackets.csv'
+    with open(file_path, 'rb') as csvfile:
+        infile = csv.reader(csvfile, delimiter=',', quotechar='"')
+        for row in infile:
+            bracket = Bracket.objects.get_or_create(name=row[0])[0]
+            bracket.manager=row[1]
+            bracket.description=row[2]
+            #bracket.description='Chem 130 - Exam Prep'
+            bracket.save()
+    return render(request, 'mytournament/load_brackets.html', {
+        "main_nav": main_nav(request.user, 'student_linkback')
+    })
+
 
 @staff_member_required
 def load_competitors_view(request, **kwargs):
@@ -25,8 +42,7 @@ def load_competitors_view(request, **kwargs):
             cc.game = row[1]
             cc.save() 
     return render(request, 'mytournament/load_competitors.html', {
-        "main_nav": main_nav(request.user, 'student_linkback'),
-        "bracket": bracket.description 
+        "main_nav": main_nav(request.user, 'student_linkback')
     })
 
 @staff_member_required
@@ -45,27 +61,8 @@ def load_judges_view(request, **kwargs):
             cc.eligable=row[1]
             cc.save() 
     return render(request, 'mytournament/load_judges.html', {
-        "main_nav": main_nav(request.user, 'student_linkback'),
-        "bracket": bracket.description 
+        "main_nav": main_nav(request.user, 'student_linkback')
     })
-
-@staff_member_required
-def load_brackets_view(request, **kwargs):
-    bname = kwargs["bracket"]
-    bracket = get_bracket(bname)
-    # read judges list from CSV file
-    fname = 'doit'
-    import csv
-    file_path = settings.DIR_UPLOAD_DATA + 'tournaments/'+fname+'_brackets.csv'
-    with open(file_path, 'rb') as csvfile:
-        infile = csv.reader(csvfile, delimiter=',', quotechar='"')
-        for row in infile:
-            # populate the bracket_id, name, eligable 
-            # avoid duplicate names per bracket, update eligable as needed
-            cc = Judge.objects.get_or_create(bracket=bracket, name=row[0])[0]
-            cc.eligable=row[1]
-            cc.save() 
-    return 'done'
 
 def tournament_selector_view(request):
 
@@ -148,7 +145,6 @@ def get_bracket(bname):
         bracket = Bracket.objects.get_or_create(name='00')[0]
         bracket.manager='Top20'
         bracket.description='Example for testing'
-        #bracket.description='Chem 130 - Exam Prep'
         bracket.save()
     else:
         bracket = brackets[0] 

@@ -19,6 +19,7 @@ tournament_patterns = patterns('',
 )
 
 urlpatterns = patterns('',
+    url(r'^load_brackets/',  login_required(load_brackets_view), name='load_brackets'),
     url(r'^(?P<bracket>\d+)/',  include(tournament_patterns, namespace='tourney')),
     #url(r'^00/',  include(tournament_patterns, namespace='tourney'), {'bracket': '00'}),
     url(r'^',                   login_required(tournament_selector_view), name='default'),
