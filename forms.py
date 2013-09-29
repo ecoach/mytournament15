@@ -4,7 +4,7 @@ from time import ctime
 from django.shortcuts import redirect
 
 class Register_Form(forms.Form):
-    game = forms.CharField(required=False, widget=forms.Textarea(attrs={'placeholder':"Paste your link...", 'class':'input-xxlarge'}))
+    game = forms.CharField(required=False, widget=forms.Textarea(attrs={'placeholder':"Paste your game...", 'class':'input-xxlarge'}))
 
 class Voter_Form(forms.Form):
     vote = forms.ChoiceField(widget=forms.RadioSelect, choices=(('0', 'Test run',), ('1', 'Commit',)), initial=0)
