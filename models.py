@@ -175,19 +175,10 @@ class Base_Tourney(object):
         pass
 
 
-
-
-
-
-
-
-
-
-
-
 class Single_Elimination(Base_Tourney):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        super(Single_Elimination, self).__init__(**kwargs)
         pass
 
 class Top(Base_Tourney):
