@@ -135,6 +135,7 @@ class Base_Tourney(object):
             return "MESSAGE_WINNER"
 
     def Status_Participating(self, who):
+        # check if you're assigned to vote in this bracket
         pass
 
     def Status_Wait(self, who):
