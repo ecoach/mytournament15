@@ -47,18 +47,18 @@ def load_competitors_view(request, **kwargs):
 
 @staff_member_required
 def load_judges_view(request, **kwargs):
-    bname = kwargs["bracket"]
-    bracket = get_bracket(bname)
     # read judges list from CSV file
     import csv
-    file_path = settings.DIR_UPLOAD_DATA + 'tournaments/'+bname+'_judges.csv'
+    file_path = settings.DIR_UPLOAD_DATA + 'tournaments/load_judges.csv'
     with open(file_path, 'rb') as csvfile:
         infile = csv.reader(csvfile, delimiter=',', quotechar='"')
         for row in infile:
+            #bracket = get_bracket(id=row[1])
+            bracket = Bracket.objects.get(id=row[1])
             # populate the bracket_id, name, eligable 
             # avoid duplicate names per bracket, update eligable as needed
             cc = Judge.objects.get_or_create(bracket=bracket, name=row[0])[0]
-            cc.eligable=row[1]
+            cc.eligable=row[2]
             cc.save() 
     return render(request, 'mytournament/load_judges.html', {
         "main_nav": main_nav(request.user, 'student_linkback')
