@@ -66,60 +66,37 @@ class Base_Tourney(object):
 
     def Setup(self, who):
         # cascade events
-        self.Round_Cleanup() # remove dangling vote assignments
+        self.Round_Cleanup() 
         if self.Round_Complete():
+            self.Advancing()
             self.RePair()
 
     def Round_Cleanup(self):
-        return False
+        # remove dangling vote assignments
+        # look up all active vote assignments for this bracket
+        # spin over and clear any that are older than 15 minutes
+        pass
 
     def Round_Complete(self):
         # check if there are any bouts remaining in current/last round
+        return True
         pass
 
     def RePair(self):
-        survivors = self.Advancing()
-        bround = self.Get_Next_Round_Number()
-        if bround == 1:
-            video_cnt = len(videos)
-            vote_cnt = len(votes)
-            if vote_cnt != video_cnt:
-                print "error!"
-                return
-            print prob + ': ' + ' video cnt = ' + str(video_cnt) + ' vote cnt = ' + str(vote_cnt)
-            print videos
-            print votes
-
-        if len(videos) % 2 > 0:
-            even = Exam_2_Bouts.Assign_Bye(videos)
-            bye = even[0]
-            videos = even[1]
-            if bye != None:
-                btime = datetime.now()
-                bout = Exam_2_Bouts(bround=bround, prob=prob, judge=None, compA=bye, compB=None, winner=bye, btime=btime)
-                bout.save()
-                print 'bye: ' + bye
-        comps = []
-        while(len(videos) > 1):
-            one = videos.pop()
-            two = videos.pop()
-            comps.append([one,two])
-            print one + ' v.s. ' + two
-        for cc in comps:
-            #judge = votes.pop()
-            bout = Exam_2_Bouts(bround=bround, prob=prob, judge=None, compA=cc[0], compB=cc[1])
-            bout.save() 
+        pass
 
     def Advancing(self):
-        # decide if selection or elimination round
-        # find everyone who is advancing to the next round
-        # set status of those selected/eliminated
+        # only winners advance in single elimination
         pass 
 
-    def Get_Next_Round_Number(self, prob):
-        # assume last round is complete 
+    def Get_Next_Round_Number(self):
+        # assumes last round is complete 
         from django.db.models import Max
-        last_round = self.bracket.bout_set.filter(prob=prob).aggregate(Max('bround'))
+        all_rounds = self.bracket.bout_set.all()
+        # no bouts yet means first round
+        if len(all_rounds) == 0:
+            return 1
+        last_round = all_rounds.aggregate(Max('bround'))
         return (last_round['bround__max'] + 1)
 
     def Status(self, who):
@@ -151,7 +128,7 @@ class Base_Tourney(object):
         bout = self.Bout_Assignment(judge)
         return [('some_url', "<a href='" + 'some_url' + "'>problem 1 (click to view problem)</a>"), ('another_url',"<a href='" + 'another_url' + "'>problem 2 (click to view problem)</a>")] 
         # look up the URLs for the judge
-        #bouts = Exam_2_Bouts.objects.filter(judge=judge).values_list('compA', 'compB')
+        #bouts = Bout.objects.filter(judge=judge).values_list('compA', 'compB')
         #c1 = W_13Data.objects.filter(user_id=bouts[0][0]).values_list('Exam_2_Video_URL')
         #c2 = W_13Data.objects.filter(user_id=bouts[0][1]).values_list('Exam_2_Video_URL')
         #return [(c1[0][0], "<a href='" + c1[0][0] + "'>video 1 (click to watch)</a>"), (c2[0][0],"<a href='" + c2[0][0] + "'>video 2 (click to watch)</a>")] 
@@ -170,9 +147,10 @@ class Base_Tourney(object):
 
     def Record_Vote(self, bout, judge, decision):
         import pdb; pdb.set_trace() 
-        # record the vote
+        # make sure the vote is still assigned to them, may have timed out!
+        # record the vote on bout
+        # set status of competitors selected/eliminated
         # cascade events
-        # set status of those selected/eliminated
         pass
 
 
@@ -181,6 +159,28 @@ class Single_Elimination(Base_Tourney):
     def __init__(self, **kwargs):
         super(Single_Elimination, self).__init__(**kwargs)
         pass
+
+    def RePair(self):
+        from datetime import datetime
+        competitors = Competitor.objects.filter(bracket=self.bracket, losses=0).extra(order_by = ['byes'])
+        bround = self.Get_Next_Round_Number()
+        # handle the bye
+        if len(competitors) % 2 > 0:
+            bye = competitors[0]
+            competitors = competitors[1:]
+            btime = datetime.now()
+            bout = Bout(bracket=self.bracket, bround=bround, judge=None, compA=bye, compB=bye, winner=bye, btime=btime)
+            bout.save()
+            bye.byes += 1
+            bye.save()
+        comps = []
+        while(len(competitors) > 1):
+            one = competitors.pop()
+            two = competitors.pop()
+            comps.append([one,two])
+        for cc in comps:
+            bout = Bout(bracket=self.bracket, bround=bround, judge=None, compA=cc[0], compB=cc[1])
+            bout.save() 
 
 class Top(Base_Tourney):
     seeking = 3
@@ -210,6 +210,11 @@ class Absolute_Order(Base_Tourney):
     def __init__(self):
         pass
 
+    def Advancing(self):
+        # decide if selection or elimination round
+        # find everyone who is advancing to the next round
+        # set status of those selected/eliminated
+        pass 
 
 class Swiss_Style(Base_Tourney):
 

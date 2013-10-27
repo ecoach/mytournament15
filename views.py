@@ -40,6 +40,11 @@ def load_competitors_view(request, **kwargs):
             # avoid duplicate names per bracket, update game as needed
             cc = Competitor.objects.get_or_create(bracket=bracket, name=row[0])[0]
             cc.game = row[1]
+            cc.wins = 0
+            cc.losses = 0
+            cc.points = 0
+            cc.byes = 0
+            cc.status = 0
             cc.save() 
     return render(request, 'mytournament/load_competitors.html', {
         "main_nav": main_nav(request.user, 'student_linkback')
@@ -52,9 +57,9 @@ def load_judges_view(request, **kwargs):
     file_path = settings.DIR_UPLOAD_DATA + 'tournaments/load_judges.csv'
     with open(file_path, 'rb') as csvfile:
         infile = csv.reader(csvfile, delimiter=',', quotechar='"')
+        bracket_prefix = infile.next()[0]
         for row in infile:
-            #bracket = get_bracket(id=row[1])
-            bracket = Bracket.objects.get(id=row[1])
+            bracket = get_bracket(bracket_prefix+str(row[1]))
             # populate the bracket_id, name, eligable 
             # avoid duplicate names per bracket, update eligable as needed
             cc = Judge.objects.get_or_create(bracket=bracket, name=row[0])[0]
