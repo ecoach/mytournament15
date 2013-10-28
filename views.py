@@ -64,6 +64,7 @@ def load_judges_view(request, **kwargs):
             # avoid duplicate names per bracket, update eligable as needed
             cc = Judge.objects.get_or_create(bracket=bracket, name=row[0])[0]
             cc.eligable=row[2]
+            cc.decisions=0
             cc.save() 
     return render(request, 'mytournament/load_judges.html', {
         "main_nav": main_nav(request.user, 'student_linkback')
@@ -124,7 +125,7 @@ def vote_view(request, **kwargs):
     if request.method == 'POST':
         form = Voter_Form(
             data=request.POST,
-            vote_choices = manager.Vote_Choices(judge=request.user.username),
+            vote_choices = manager.Vote_Choices(who=request.user.username),
         )
         if form.is_valid():
             bout = form.cleaned_data['bout']
@@ -132,15 +133,16 @@ def vote_view(request, **kwargs):
             manager.Record_Vote(bout, request.user.username, decision)
     form = Voter_Form(
         initial={
-            'bout': manager.Bout_Id(request.user)
+            'bout': manager.Bout_Id(request.user.username)
         },
-        vote_choices = manager.Vote_Choices(judge=request.user.username)
+        vote_choices = manager.Vote_Choices(who=request.user.username)
     )
     return render(request, 'mytournament/vote.html', {
         "main_nav": main_nav(request.user, 'student_linkback'),
         "bracket": bracket.description,
         "form": form,
-        "status": manager.Status(request.user)
+        "status": manager.Status(request.user),
+        "winner": manager.GetWinner()
     })
 
 def get_bracket(bname):

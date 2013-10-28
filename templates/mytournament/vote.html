@@ -7,17 +7,15 @@
 {% endif %} 
 
 {% if status == 'MESSAGE_WAIT' %}  
-    Hold your horses! (stop back in 1/2 an hour)
+    Hold your horses! (stop back in 15-20 minutes)
     <br>
     <br>
-    <table>
-    <tr><th>
-    Consider the following to understand why you have to wait:
-    </th></tr>
-    <tr><td>
+    <strong>Consider the following to understand why you have to wait:</strong>
+    <br>
+    <br>
     <ol>
     <li>
-    Voting must take place in rounds in order for the winners advance.
+    Voting must take place in rounds in order for the winners to advance.
     </li>
     <li>
     A new round of pairings can not be made until the previous round has completed.
@@ -26,23 +24,26 @@
     The current round of pairings have already been distributed to voters who logged in before you.
     </li>
     </ol>
-    </td></tr></table>
     <br>
     <br>
 {% endif %} 
 
 {% if status == 'MESSAGE_THANKS' %}  
-    Thanks for voting
+    Thanks for voting, you will find the winner at this same link as soon as the last vote is cast.
 {% endif %} 
 
 {% if status == 'MESSAGE_WINNER' %}  
-    winner of voting!
+    Thanks for participating!
+    <br>
+    <br>
+    <strong>The winning submission is: </strong> <a href='{{winner}}' data-log-category='external-link' data-log-action='{{winner}}' data-log-label='winner' target='_blank'>{{winner}}</a>
 {% endif %} 
 
 {% if status == 'MESSAGE_VOTE' %}  
-    Review these two problems and vote for the one which <b><em>you think is going to be more important to understand </em></b> in order to do well on the upcoming exam.
+    Review these two submissions, <strong><em> give it some thought,</em></strong> and vote for the one which <b><em>you think is better. </em></b>
+    <br>
+    <br>
     <form action="." method="post" enctype="multipart/form-data">{% csrf_token %}
-
         <ul>
             <!-- 
                 messy snag from online example 
@@ -66,9 +67,10 @@
                     {% endcomment %}
                 </label>
             </li>
+            {{form.bout}}
             {% endfor %}
         </ul>
-
+    <br>
         <input type='submit' value='Submit Vote'></input>
     </form>
 {% endif %} 
