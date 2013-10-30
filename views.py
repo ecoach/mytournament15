@@ -28,18 +28,18 @@ def load_brackets_view(request, **kwargs):
 
 @staff_member_required
 def load_competitors_view(request, **kwargs):
-    bname = kwargs["bracket"]
-    bracket = get_bracket(bname)
     # read competitor list from CSV file
     import csv
-    file_path = settings.DIR_UPLOAD_DATA + 'tournaments/'+bname+'_competitors.csv'
+    file_path = settings.DIR_UPLOAD_DATA + 'tournaments/load_competitors.csv'
     with open(file_path, 'rb') as csvfile:
         infile = csv.reader(csvfile, delimiter=',', quotechar='"')
+        bracket_prefix = infile.next()[0]
         for row in infile:
+            bracket = get_bracket(bracket_prefix+str(row[1]))
             # populate bracket_id, name, game
             # avoid duplicate names per bracket, update game as needed
             cc = Competitor.objects.get_or_create(bracket=bracket, name=row[0])[0]
-            cc.game = row[1]
+            cc.game = row[2]
             cc.wins = 0
             cc.losses = 0
             cc.points = 0
@@ -71,7 +71,6 @@ def load_judges_view(request, **kwargs):
     })
 
 def tournament_selector_view(request):
-
     return render(request, 'mytournament/selector.html', {
         "main_nav": main_nav(request.user, 'student_linkback'),
         "bracket": "None" 

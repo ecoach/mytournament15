@@ -252,7 +252,6 @@ class Single_Elimination(Base_Tourney):
 
     def __init__(self, **kwargs):
         super(Single_Elimination, self).__init__(**kwargs)
-        pass
 
     def RePair(self, who):
         bround = self.Get_Next_Round_Number()
@@ -299,6 +298,23 @@ class Single_Elimination(Base_Tourney):
             bout = Bout(bracket=self.bracket, bround=bround, judge=None, compA=cc[0], compB=cc[1])
             bout.save() 
 
+class Absolute_Order(Base_Tourney):
+
+    def __init__(self, **kwargs):
+        super(Absolute_Order, self).__init__(**kwargs)
+
+    def Advancing(self):
+        # decide if selection or elimination round
+        # find everyone who is advancing to the next round
+        # set status of those selected/eliminated
+        pass 
+
+    def RePair(self, who):
+        pass
+
+    def Record_Vote(self, bout_id, who, game):
+        pass
+
 class Top(Base_Tourney):
     seeking = 3
 
@@ -314,28 +330,17 @@ class Top20(Top):
 class Top10(Top):
     seeking = 10
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
 
 class Genetic(Base_Tourney):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
-
-class Absolute_Order(Base_Tourney):
-
-    def __init__(self):
-        pass
-
-    def Advancing(self):
-        # decide if selection or elimination round
-        # find everyone who is advancing to the next round
-        # set status of those selected/eliminated
-        pass 
 
 class Swiss_Style(Base_Tourney):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
 
 

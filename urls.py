@@ -21,8 +21,8 @@ tournament_patterns = patterns('',
 urlpatterns = patterns('',
     url(r'^load_brackets/',  login_required(load_brackets_view), name='load_brackets'),
     url(r'^load_judges/',  login_required(load_judges_view), name='load_judges'),
+    url(r'^load_competitors/',  login_required(load_competitors_view), name='load_competitors'),
     url(r'^(?P<bracket>[a-z0-9\-]+)/',  include(tournament_patterns, namespace='tourney')),
-    #url(r'^00/',  include(tournament_patterns, namespace='tourney'), {'bracket': '00'}),
     url(r'^',                   login_required(tournament_selector_view), name='default'),
 )
 
