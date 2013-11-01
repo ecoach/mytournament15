@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Max
 from django.db.models import F, Q
 from datetime import datetime
+import json
 
 # Create your models here.
 
@@ -27,12 +28,45 @@ class Competitor(models.Model):
     bracket = models.ForeignKey(Bracket)
     name = models.CharField(max_length=30, null=True, blank=True)
     game = models.TextField(null=True, blank=True)
+    beat = models.TextField(null=True, blank=True)      # json array of who they beat
+    beatby = models.TextField(null=True, blank=True)    # json array of who beat them
     wins = models.IntegerField(null=True, blank=True)
     losses = models.IntegerField(null=True, blank=True)
-    points = models.IntegerField(null=True, blank=True)
+    draws = models.IntegerField(null=True, blank=True)
     byes = models.IntegerField(null=True, blank=True)
+    points = models.IntegerField(null=True, blank=True)
     status = models.IntegerField(null=True, blank=True)
 
+    def Get_Beatby(self):
+        ret = json.loads(json.dumps(self.beatby))
+        if isinstance(ret, list):
+            return ret
+        return []
+        
+    def Get_Beat(self):
+        ret = json.loads(json.dumps(self.beat))
+        if isinstance(ret, list):
+            return ret
+        return []
+
+    def Set_Beatby(self, beatby):
+        self.beatby = json.dumps(beatby)
+        self.save()
+   
+    def Set_Beat(self, beat):
+        self.beat = json.dumps(beat)
+        self.save()
+
+    def Add_Beat(self, who):
+        beat = self.Get_Beat() 
+        beat.append(who)
+        self.Set_Beat(beat)
+     
+    def Add_Beatby(self, who):
+        beatby = self.Get_Beatby() 
+        beatby.append(who)
+        self.Set_Beatby(beatby)
+    
 class Judge(models.Model):
     # [12m_Bout]
     bracket = models.ForeignKey(Bracket)
@@ -75,8 +109,12 @@ class Base_Tourney(object):
         judge = self.Get_Judge(who)
         if self.Round_Complete(judge):
             self.Advancing()
-            self.RePair(who)
+            self.RePair()
 
+    def Votes_Remaining(self):
+        return self.bracket.judge_set.filter(eligable__gt=F('decisions'))
+        #judgements = judgements.filter(~Q(name=who))
+    
     def Get_Judge(self, who):
         # get judge object for voter
         try:
@@ -87,8 +125,8 @@ class Base_Tourney(object):
 
     def Round_Cleanup(self):
         # if there aren't any judgements left we're done (plus clean up party trash)
-        judgements = self.bracket.judge_set.filter(eligable__gt=F('decisions'))
-        if len(judgements) == 0:
+        if len(self.Votes_Remaining()) == 0  or self.bracket.finished == 1:
+            # bracket can finish for other reasons...in which case cleanup can still happen
             self.bracket.finished = 1
             self.bracket.save()
             # find all the dangling bouts (party trash) and delete them
@@ -115,7 +153,7 @@ class Base_Tourney(object):
         #remain = all_rounds.filter(~Q(judge=judge), bround=current_round, winner__isnull=True)
         return (len(remain) == 0)
 
-    def RePair(self, who):
+    def RePair(self):
         pass
 
     def Advancing(self):
@@ -253,7 +291,7 @@ class Single_Elimination(Base_Tourney):
     def __init__(self, **kwargs):
         super(Single_Elimination, self).__init__(**kwargs)
 
-    def RePair(self, who):
+    def RePair(self):
         bround = self.Get_Next_Round_Number()
         comp_res = Competitor.objects.filter(bracket=self.bracket, losses=0).extra(order_by = ['byes'])
         competitors = [x for x in comp_res]
@@ -264,14 +302,7 @@ class Single_Elimination(Base_Tourney):
             winner.status = 1
             winner.save()
             # check if judgements remain and retrace or declare a winner
-            judgements = self.bracket.judge_set.filter(eligable__gt=F('decisions'))
-            #judgements = judgements.filter(~Q(name=who))
-            """
-            if len(judgements) == 0:
-                self.bracket.finished = 1
-                self.bracket.save()
-                return # done!
-            """
+            judgements = self.Votes_Remaining()
             # works in single elimination 
             # this creates party trash when the last person to vote submits...extra bout
             repeats = Bout.objects.filter(winner=winner, judge__isnull=False).order_by('btime')
@@ -304,22 +335,106 @@ class Absolute_Order(Base_Tourney):
         super(Absolute_Order, self).__init__(**kwargs)
 
     def Advancing(self):
-        # decide if selection or elimination round
-        # find everyone who is advancing to the next round
-        # set status of those selected/eliminated
-        pass 
-
-    def RePair(self, who):
+        # everyone advances
         pass
 
+    def RePair(self):
+        if len(self.Votes_Remaining()) == 0:
+            return
+        bround = self.Get_Next_Round_Number()
+        comp_res = Competitor.objects.filter(bracket=self.bracket)
+        competitors = [x for x in comp_res]
+        # make groups of competitors
+        comp_groups = dict()
+        for cc in competitors:
+            gparam = cc.wins
+            #gparam = cc.wins - cc.losses
+            #gparam = round(float(cc.losses) / (cc.wins + 1), 1)
+            if not gparam in comp_groups.keys():
+                comp_groups[gparam] = []
+            comp_groups[gparam].append(cc)
+        cgroups = []
+        keys = sorted(comp_groups.keys(), reverse=True)
+        for gg in keys:
+            cgroups.append(comp_groups[gg])
+        useful=0
+        for gg in cgroups:  
+            useful += self.CreateRound(gg, bround)
+        # when no bouts were found at all things are done
+        if useful == 0:
+            self.bracket.finished = 1
+            self.bracket.save()
+ 
+    def CreateRound(self, comps, rnd):
+        votes_remaining = len(self.Votes_Remaining())
+        bouts = [] # list of bouts in that round
+        comps.sort(key=lambda x: (x.wins - x.losses), reverse=True) 
+        byes_tally = []
+        # this does fold the sorted list :)
+        while(len(comps) > 0 and votes_remaining > 0):
+            one = comps.pop()
+            one.byes += 1
+            one.save()
+            byes_tally.append(one)
+            for two in comps:
+                two.Get_Beat()
+                if not one.name in (two.Get_Beat() + two.Get_Beatby()):
+                    one.byes -= 1
+                    one.save()
+                    byes_tally.pop()
+                    bouts.append([one,two]) 
+                    comps.remove(two)
+                    votes_remaining -= 1
+                    break
+        if len(bouts) < 1:
+            return 0
+        for cc in bouts:
+            bout = Bout(bracket=self.bracket, bround=rnd, judge=None, compA=cc[0], compB=cc[1])
+            bout.save()
+        return 1
+ 
     def Record_Vote(self, bout_id, who, game):
-        pass
+        try:
+            # make sure the vote is still assigned to them, may have timed out!
+            bout = Bout.objects.get(id=bout_id)
+            winner = Competitor.objects.get(bracket=self.bracket, game=game)
+            judge = Judge.objects.get(bracket=self.bracket, name=who)
+        except: 
+            # must have timed out!
+            return
+        if winner == bout.compA:
+            looser = bout.compB
+        else:
+            looser = bout.compA
+        # set record the competitors stats
+        judge.decisions += 1
+        judge.save()
+        looser.losses += 1
+        looser.Add_Beatby(winner.name)
+        looser.save()
+        winner.wins += 1 
+        winner.Add_Beat(looser.name)
+        winner.save()
+        # record the bout winner
+        bout.winner = winner
+        bout.save()
+
+    def GetWinner(self):
+        # this should maybe print the ordering results...
+        return 0
 
 class Top(Base_Tourney):
     seeking = 3
 
     def __init__(self, **kwargs):
         super(Top, self).__init__(**kwargs)
+
+    def Advancing(self):
+        # decide if selection or elimination round
+        # find everyone who is advancing to the next round
+        # set status of those selected/eliminated
+        pass 
+
 
 class Top20(Top):
     seeking = 3
