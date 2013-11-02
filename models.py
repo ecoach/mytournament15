@@ -100,6 +100,11 @@ class Base_Tourney(object):
         if not self.bracket.ready:
             cc = Competitor.objects.get_or_create(bracket=self.bracket, name=name)[0]
             cc.game = game
+            cc.wins = 0
+            cc.losses = 0
+            cc.points = 0
+            cc.byes = 0
+            cc.status = -1
             cc.save()
 
     def Game(self, competitor):
@@ -198,7 +203,7 @@ class Base_Tourney(object):
 
     def GetWinner(self):
         # this should maybe print the ordering results...
-        comps = self.bracket.competitor_set.extra(select={'rank': 'wins - losses'}).order_by('-rank')
+        comps = self.bracket.competitor_set.filter(status=0).extra(select={'rank': 'wins - losses'}).order_by('-rank')
         winners = []
         for cc in comps:
             winners.append([cc.wins, cc.losses, cc.game]) 
@@ -355,8 +360,8 @@ class Absolute_Order(Base_Tourney):
         competitors = [x for x in comp_res]
         # make groups of competitors
         comp_groups = dict()
-        win_set_size = len(set([x.wins for x in self.bracket.competitor_set.all()]))
-        comp_set_size = len(self.bracket.competitor_set.all())
+        win_set_size = len(set([x.wins for x in self.bracket.competitor_set.filter(status=0)]))
+        comp_set_size = len(self.bracket.competitor_set.filter(status=0))
         match_losses = False
         if win_set_size == comp_set_size:
             match_losses = True

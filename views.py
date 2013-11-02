@@ -44,7 +44,7 @@ def load_competitors_view(request, **kwargs):
             cc.losses = 0
             cc.points = 0
             cc.byes = 0
-            cc.status = 0
+            cc.status = -1
             cc.save() 
     return render(request, 'mytournament/load_competitors.html', {
         "main_nav": main_nav(request.user, 'student_linkback')
