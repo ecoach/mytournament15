@@ -3,7 +3,19 @@
 {% block bottom %}
 
 {% if status == 'MESSAGE_NON_PART' %}  
-    You are not yet a participant in the online voting for this tournament.
+    One of the following is true:
+    <br>
+    <br>
+    <ol>
+    <li>
+    You <strong>will be a voting participant</strong> when this tournament begins but that's not been configured yet
+    </li>
+    <li>
+    The voting has begun but you are not a voter in this tournament 
+    </li>
+    </ol>
+    <br>
+    <strong>Everyone can view the results here when tournament is finished.</strong>
 {% endif %} 
 
 {% if status == 'MESSAGE_WAIT' %}  
@@ -33,10 +45,26 @@
 {% endif %} 
 
 {% if status == 'MESSAGE_WINNER' %}  
-    Thanks for participating!
+    <strong>This tournament is now finished, results are below.</strong>
     <br>
     <br>
-    <strong>The winning submission is: </strong> <a href='{{winner}}' data-log-category='external-link' data-log-action='{{winner}}' data-log-label='winner' target='_blank'>{{winner}}</a>
+    <table class="table table-striped table-bordered table-condensed table-hover">
+        <tr>
+            <th>Wins</th>
+            <th>Losses</th>
+            <th>Game</th>
+        </tr>
+        {% for ww in winner %}
+            <tr>
+                <td>{{ww.0}}</td>
+                <td>{{ww.1}}</td>
+                <td><a href='{{ww.2}}' data-log-category='external-link' data-log-action='{{ww.2}}' data-log-label='winner' target='_blank'>{{ww.2}}</a></td>
+            </tr>
+        {% endfor %}
+    </table>
+    <!--
+    <a href='{{winner}}' data-log-category='external-link' data-log-action='{{winner}}' data-log-label='winner' target='_blank'>{{winner}}</a>
+    -->
 {% endif %} 
 
 {% if status == 'MESSAGE_VOTE' %}  

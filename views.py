@@ -116,10 +116,7 @@ def vote_view(request, **kwargs):
     bracket = get_bracket(bname)
     # load the manager
     manager = eval(bracket.manager)(bracket=bracket)
-    
-    # run manager setup
-    manager.Setup(request.user.username) 
-
+   
     # handle the form
     if request.method == 'POST':
         form = Voter_Form(
@@ -130,6 +127,8 @@ def vote_view(request, **kwargs):
             bout = form.cleaned_data['bout']
             decision = form.cleaned_data['vote']
             manager.Record_Vote(bout, request.user.username, decision)
+    # run manager setup
+    manager.Setup(request.user.username) 
     form = Voter_Form(
         initial={
             'bout': manager.Bout_Id(request.user.username)
@@ -140,7 +139,7 @@ def vote_view(request, **kwargs):
         "main_nav": main_nav(request.user, 'student_linkback'),
         "bracket": bracket.description,
         "form": form,
-        "status": manager.Status(request.user),
+        "status": manager.Status(request.user.username),
         "winner": manager.GetWinner()
     })
 

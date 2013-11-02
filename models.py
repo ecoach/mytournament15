@@ -38,15 +38,22 @@ class Competitor(models.Model):
     status = models.IntegerField(null=True, blank=True)
 
     def Get_Beatby(self):
-        ret = json.loads(json.dumps(self.beatby))
-        if isinstance(ret, list):
-            return ret
+        try: 
+            ret = json.loads(self.beatby)
+            if isinstance(ret, list):
+                return ret
+        except:
+            pass
         return []
+
         
     def Get_Beat(self):
-        ret = json.loads(json.dumps(self.beat))
-        if isinstance(ret, list):
-            return ret
+        try: 
+            ret = json.loads(self.beat)
+            if isinstance(ret, list):
+                return ret
+        except:
+            pass
         return []
 
     def Set_Beatby(self, beatby):
@@ -111,7 +118,10 @@ class Base_Tourney(object):
             self.Advancing()
             self.RePair()
 
-    def Votes_Remaining(self):
+    def Votes_Remaining_Judge(self, who):
+        return self.bracket.judge_set.filter(eligable__gt=F('decisions'), name=who)
+
+    def Decisions_Remaining_Bracket(self):
         return self.bracket.judge_set.filter(eligable__gt=F('decisions'))
         #judgements = judgements.filter(~Q(name=who))
     
@@ -124,8 +134,11 @@ class Base_Tourney(object):
             return False
 
     def Round_Cleanup(self):
+        # if judges havent' been loaded yet don't clean up and set to finished
+        if len(self.bracket.judge_set.all()) == 0:
+            return          
         # if there aren't any judgements left we're done (plus clean up party trash)
-        if len(self.Votes_Remaining()) == 0  or self.bracket.finished == 1:
+        if len(self.Decisions_Remaining_Bracket()) == 0  or self.bracket.finished == 1:
             # bracket can finish for other reasons...in which case cleanup can still happen
             self.bracket.finished = 1
             self.bracket.save()
@@ -170,6 +183,8 @@ class Base_Tourney(object):
         return (last_round['bround__max'] + 1)
 
     def Status(self, who):
+        if self.bracket.finished: # everyone can see once it's done
+            return "MESSAGE_WINNER" 
         if not self.Status_Participating(who):
             return "MESSAGE_NON_PART"
         elif self.Status_Wait(who):
@@ -182,14 +197,12 @@ class Base_Tourney(object):
             return "MESSAGE_WINNER"
 
     def GetWinner(self):
-        try:
-            winner = self.bracket.competitor_set.filter(status=1)[0].game
-        except:
-            winner = 0
-        # wait for negative rounds too...
-        if self.bracket.finished:
-            return winner
-        return 0
+        # this should maybe print the ordering results...
+        comps = self.bracket.competitor_set.extra(select={'rank': 'wins - losses'}).order_by('-rank')
+        winners = []
+        for cc in comps:
+            winners.append([cc.wins, cc.losses, cc.game]) 
+        return winners
 
     def Status_Participating(self, who):
         # check if you're assigned to vote in this bracket
@@ -197,67 +210,63 @@ class Base_Tourney(object):
         if not judge:
             return False
         return True 
-        #return judge.decisions < judge.eligable
 
     def Status_Wait(self, who):
         # check if the voting assignments are all distributed for this round 
         # should already know they are a judge (they would have got non-part msg)
         # this depends on cleanup running first...
-        try:
-            judge = self.Get_Judge(who)
-            bout = self.Bout_Assignment(judge)
-            if bout:
-                return False
+        if self.bracket.finished == 1:
+            return False
+        if self.Decisions_Remaining_Bracket() == 0:
+            return False
+        if len(self.Votes_Remaining_Judge(who)) == 0:
+            return False
+        if not self.Bout_Assignment(who): # this being third requires above both false
             return True
-        except:
-            return True 
+        return False
 
     def Status_Vote_Ready(self, who):
         # make sure they have a bout assigned and there's not already a winner
-        try:
-            judge = self.Get_Judge(who)
-            bout = self.Bout_Assignment(judge)
-        except:
-            return False
-        return (bout.winner == None)
+        return self.Bout_Assignment(who)
 
     def Status_Vote_Done(self, who):
         if self.bracket.finished:
             return False
         return True
-        #in_hole = self.bracket.bout_set.filter(judge__isnull=True, winner__isnull=True)
         pass
 
     def Vote_Choices(self, who):
-        judge = self.Get_Judge(who)
-        if not judge:
-            return [('some_url', "<a href='" + 'some_url' + "'>not a judge for this bracket!</a>"), ('another_url',"<a href='" + 'another_url' + "'>not a judge for this bracket!</a>")] 
-        bout = self.Bout_Assignment(judge)
+        bout = self.Bout_Assignment(who)
         if not bout:
-            return [('some_url', "<a href='" + 'some_url' + "'>bout not ready for this bracket!</a>"), ('another_url',"<a href='" + 'another_url' + "'>bout not ready for this bracket!</a>")] 
-        return [(bout.compA.game, "<a href='" + bout.compA.game + "' class='data-log-external' target='_blank'>submission 1 (click to review)</a>"), (bout.compB.game,"<a href='" + bout.compB.game + "' class='data-log-external' target='_blank'>submission 2 (click to review)</a>")] 
+            return [('some_url', "<a href='" + 'some_url' + "'>if you get see this please report it...</a>"), 
+                    ('another_url',"<a href='" + 'another_url' + "'>for some reason bout not ready for this bracket!</a>")] 
+        return [(bout.compA.game, "<a href='" + bout.compA.game + "' class='data-log-external' target='_blank'>submission 1 (click to review)</a>"), 
+                    (bout.compB.game,"<a href='" + bout.compB.game + "' class='data-log-external' target='_blank'>submission 2 (click to review)</a>")] 
 
        
-    def Bout_Assignment(self, judge):
+    def Bout_Assignment(self, who):
+        # make sure they have votes left
+        dec = self.Votes_Remaining_Judge(who)
+        if len(dec) == 0:
+            return False
+        judge = dec[0] 
         # check if bout assignment already exists
-        on_deck = self.bracket.bout_set.filter(judge=judge)
+        on_deck = self.bracket.bout_set.filter(judge=judge, winner__isnull=True)
         if len(on_deck) > 0:
             return on_deck[0]
-        # or try to make a new bout assignment
+        # or try to make a new bout assignment 
         in_hole = self.bracket.bout_set.filter(judge__isnull=True, winner__isnull=True)
-        if len(in_hole) > 0:
-            bout = in_hole[0]
-            bout.judge = judge
-            bout.btime = datetime.now()
-            bout.save()
-            return bout
+        for bout in in_hole:
+            # don't assign someone their own stuff to judge!
+            if bout.compA.name != who and bout.compB.name != who:
+                bout.judge = judge
+                bout.btime = datetime.now()
+                bout.save()
+                return bout
         return False
 
     def Bout_Id(self, who):
-        judge = self.Get_Judge(who)
-        if not judge:
-            return None 
-        bout = self.Bout_Assignment(judge)
+        bout = self.Bout_Assignment(who)
         if not bout:
             return 0
         return bout.id
@@ -302,7 +311,7 @@ class Single_Elimination(Base_Tourney):
             winner.status = 1
             winner.save()
             # check if judgements remain and retrace or declare a winner
-            judgements = self.Votes_Remaining()
+            judgements = self.Decisions_Remaining_Bracket()
             # works in single elimination 
             # this creates party trash when the last person to vote submits...extra bout
             repeats = Bout.objects.filter(winner=winner, judge__isnull=False).order_by('btime')
@@ -339,15 +348,22 @@ class Absolute_Order(Base_Tourney):
         pass
 
     def RePair(self):
-        if len(self.Votes_Remaining()) == 0:
+        if len(self.Decisions_Remaining_Bracket()) == 0:
             return
         bround = self.Get_Next_Round_Number()
         comp_res = Competitor.objects.filter(bracket=self.bracket)
         competitors = [x for x in comp_res]
         # make groups of competitors
         comp_groups = dict()
+        win_set_size = len(set([x.wins for x in self.bracket.competitor_set.all()]))
+        comp_set_size = len(self.bracket.competitor_set.all())
+        match_losses = False
+        if win_set_size == comp_set_size:
+            match_losses = True
         for cc in competitors:
             gparam = cc.wins
+            if match_losses:
+                gparam = cc.losses
             #gparam = cc.wins - cc.losses
             #gparam = round(float(cc.losses) / (cc.wins + 1), 1)
             if not gparam in comp_groups.keys():
@@ -360,18 +376,19 @@ class Absolute_Order(Base_Tourney):
         useful=0
         for gg in cgroups:  
             useful += self.CreateRound(gg, bround)
-        # when no bouts were found at all things are done
+        # when no bouts are found at all things are done
         if useful == 0:
             self.bracket.finished = 1
             self.bracket.save()
  
     def CreateRound(self, comps, rnd):
-        votes_remaining = len(self.Votes_Remaining())
         bouts = [] # list of bouts in that round
         comps.sort(key=lambda x: (x.wins - x.losses), reverse=True) 
         byes_tally = []
+        #decisions_remaining = sum([x.eligable - x.decisions for x in self.Decisions_Remaining_Bracket()])
         # this does fold the sorted list :)
-        while(len(comps) > 0 and votes_remaining > 0):
+        while(len(comps) > 0):
+        #while(len(comps) > 0 and decisions_remaining > 0):
             one = comps.pop()
             one.byes += 1
             one.save()
@@ -384,7 +401,7 @@ class Absolute_Order(Base_Tourney):
                     byes_tally.pop()
                     bouts.append([one,two]) 
                     comps.remove(two)
-                    votes_remaining -= 1
+                    #decisions_remaining -= 1
                     break
         if len(bouts) < 1:
             return 0
@@ -418,10 +435,6 @@ class Absolute_Order(Base_Tourney):
         # record the bout winner
         bout.winner = winner
         bout.save()
-
-    def GetWinner(self):
-        # this should maybe print the ordering results...
-        return 0
 
 class Top(Base_Tourney):
     seeking = 3
