@@ -313,7 +313,6 @@ class Single_Elimination(Base_Tourney):
         if len(competitors) == 1:
             # this only needs to happen once...competitors may loose in negative rounds...no matter
             winner = competitors[0]
-            winner.status = 1
             winner.save()
             # check if judgements remain and retrace or declare a winner
             judgements = self.Decisions_Remaining_Bracket()
