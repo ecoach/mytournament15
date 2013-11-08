@@ -245,8 +245,8 @@ class Base_Tourney(object):
         if not bout:
             return [('some_url', "<a href='" + 'some_url' + "'>if you get see this please report it...</a>"), 
                     ('another_url',"<a href='" + 'another_url' + "'>for some reason bout not ready for this bracket!</a>")] 
-        return [(bout.compA.game, "<a href='" + bout.compA.game + "' class='data-log-external' target='_blank'>submission 1 (click to review)</a>"), 
-                    (bout.compB.game,"<a href='" + bout.compB.game + "' class='data-log-external' target='_blank'>submission 2 (click to review)</a>")] 
+        return [(bout.compA.game, "<a href='" + bout.compA.game + "' class='data-log-external' target='_blank'>submission 1 (click to review " + bout.compA.game + ")</a>"), 
+                    (bout.compB.game,"<a href='" + bout.compB.game + "' class='data-log-external' target='_blank'>submission 2 (click to review " + bout.compB.game + ")</a>")] 
 
        
     def Bout_Assignment(self, who):

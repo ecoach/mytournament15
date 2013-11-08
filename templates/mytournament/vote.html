@@ -70,20 +70,20 @@
 {% if status == 'MESSAGE_VOTE' %}  
     Review these two submissions, <strong><em> give it some thought,</em></strong> and vote for the one which <b><em>you think is better. </em></b>
     <br>
-    <br>
     <form action="." method="post" enctype="multipart/form-data">{% csrf_token %}
-        <ul>
             <!-- 
                 messy snag from online example 
                 http://stackoverflow.com/questions/6218299/django-form-radio-input-layout
             -->
             {% for choice in form.vote.field.choices %}
-            <li>
+            <br>
                 <label for="id_{{ form.vote.html_name }}_{{ forloop.counter0 }}">
                     <input type="radio"
                         id="id_{{ form.vote.html_name }}_{{ forloop.counter0 }}"
                         value="{{ choice.0 }}"
                         name="{{ form.vote.html_name }}" />
+                    &nbsp;
+                    &nbsp;
                     {{ choice.1|safe}}
                     {% comment %}
                     {% if choice.0 == 'one' %}
@@ -94,12 +94,12 @@
                     {% endif %}
                     {% endcomment %}
                 </label>
-            </li>
             {{form.bout}}
             {% endfor %}
-        </ul>
+    <br>
     <br>
         <input type='submit' value='Submit Vote'></input>
+        {{judge.decisions}} decisions / {{judge.eligable}} required
     </form>
 {% endif %} 
 

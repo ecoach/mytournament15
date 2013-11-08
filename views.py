@@ -12,7 +12,7 @@ from .forms import *
 def load_brackets_view(request, **kwargs):
     # read bracket list from CSV file
     import csv
-    file_path = settings.DIR_UPLOAD_DATA + 'tournaments/new_brackets.csv'
+    file_path = settings.DIR_UPLOAD_DATA + 'tournaments/load_brackets.csv'
     with open(file_path, 'rb') as csvfile:
         infile = csv.reader(csvfile, delimiter=',', quotechar='"')
         for row in infile:
@@ -139,6 +139,7 @@ def vote_view(request, **kwargs):
         "main_nav": main_nav(request.user, 'student_linkback'),
         "bracket": bracket.description,
         "form": form,
+        "judge": manager.Get_Judge(request.user.username),
         "status": manager.Status(request.user.username),
         "winner": manager.GetWinner()
     })
@@ -147,6 +148,7 @@ def get_bracket(bname):
     # find/create the bracket
     brackets = Bracket.objects.filter(name=bname)
     if brackets.count() == 0:
+        #import pdb; pdb.set_trace() 
         bracket = Bracket.objects.get_or_create(name='00')[0]
         bracket.manager='Top20'
         bracket.description='Example for testing'
