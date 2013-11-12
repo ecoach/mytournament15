@@ -307,7 +307,7 @@ class Single_Elimination(Base_Tourney):
 
     def RePair(self):
         bround = self.Get_Next_Round_Number()
-        comp_res = Competitor.objects.filter(bracket=self.bracket, losses=0).extra(order_by = ['byes'])
+        comp_res = Competitor.objects.filter(bracket=self.bracket, losses=0, status=0).extra(order_by = ['byes'])
         competitors = [x for x in comp_res]
         # check if a winner has already been found...
         if len(competitors) == 1:
@@ -355,7 +355,7 @@ class Absolute_Order(Base_Tourney):
         if len(self.Decisions_Remaining_Bracket()) == 0:
             return
         bround = self.Get_Next_Round_Number()
-        comp_res = Competitor.objects.filter(bracket=self.bracket)
+        comp_res = Competitor.objects.filter(bracket=self.bracket, status=0)
         competitors = [x for x in comp_res]
         # make groups of competitors
         comp_groups = dict()
