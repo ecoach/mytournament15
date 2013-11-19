@@ -293,8 +293,10 @@ class Base_Tourney(object):
         judge.decisions += 1
         judge.save()
         looser.losses += 1
+        looser.Add_Beatby(winner.name)
         looser.save()
         winner.wins += 1 
+        winner.Add_Beat(looser.name)
         winner.save()
         # record the bout winner
         bout.winner = winner
@@ -414,32 +416,6 @@ class Absolute_Order(Base_Tourney):
             bout.save()
         return 1
  
-    def Record_Vote(self, bout_id, who, game):
-        try:
-            # make sure the vote is still assigned to them, may have timed out!
-            bout = Bout.objects.get(id=bout_id)
-            winner = Competitor.objects.get(bracket=self.bracket, game=game)
-            judge = Judge.objects.get(bracket=self.bracket, name=who)
-        except: 
-            # must have timed out!
-            return
-        if winner == bout.compA:
-            looser = bout.compB
-        else:
-            looser = bout.compA
-        # set record the competitors stats
-        judge.decisions += 1
-        judge.save()
-        looser.losses += 1
-        looser.Add_Beatby(winner.name)
-        looser.save()
-        winner.wins += 1 
-        winner.Add_Beat(looser.name)
-        winner.save()
-        # record the bout winner
-        bout.winner = winner
-        bout.save()
-
 class Top(Base_Tourney):
     seeking = 3
 
