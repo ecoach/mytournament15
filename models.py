@@ -157,7 +157,7 @@ class Base_Tourney(object):
         dangling = Bout.objects.filter(bracket=self.bracket, winner__isnull=True, btime__isnull=False)
         for bb in dangling:
             del_minutes = (datetime.now() - bb.btime).seconds / 60
-            if del_minutes >= 1:
+            if del_minutes >= 15:
                 #bb.delete()
                 bb.judge = None
                 bb.btime = None
