@@ -3,7 +3,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, render
 from django.conf import settings
-from mynav.nav import main_nav
+from mynav.tourney_nav import *
 from .models import *
 from .forms import *
 
@@ -22,7 +22,7 @@ def load_brackets_view(request, **kwargs):
             #bracket.description='Chem 130 - Exam Prep'
             bracket.save()
     return render(request, 'mytournament/load_brackets.html', {
-        "main_nav": main_nav(request.user, 'student_linkback')
+        "main_nav": tourney_main_nav(request.user, 'student_linkback')
     })
 
 
@@ -47,7 +47,7 @@ def load_competitors_view(request, **kwargs):
             cc.status = -1
             cc.save() 
     return render(request, 'mytournament/load_competitors.html', {
-        "main_nav": main_nav(request.user, 'student_linkback')
+        "main_nav": tourney_main_nav(request.user, 'student_linkback')
     })
 
 @staff_member_required
@@ -67,12 +67,12 @@ def load_judges_view(request, **kwargs):
             cc.decisions=0
             cc.save() 
     return render(request, 'mytournament/load_judges.html', {
-        "main_nav": main_nav(request.user, 'student_linkback')
+        "main_nav": tourney_main_nav(request.user, 'student_linkback')
     })
 
 def tournament_selector_view(request):
     return render(request, 'mytournament/selector.html', {
-        "main_nav": main_nav(request.user, 'student_linkback'),
+        "main_nav": tourney_main_nav(request.user, 'student_linkback'),
         "bracket": "None" 
     })
 
@@ -80,7 +80,7 @@ def info_view(request, **kwargs):
     bname = kwargs["bracket"]
     bracket = get_bracket(bname)
     return render(request, 'mytournament/info.html', {
-        "main_nav": main_nav(request.user, 'student_linkback'),
+        "main_nav": tourney_main_nav(request.user, 'student_linkback'),
         "bracket": bracket.description 
     })
 
@@ -105,7 +105,7 @@ def register_view(request, **kwargs):
     )
 
     return render(request, 'mytournament/register.html', {
-        "main_nav": main_nav(request.user, 'student_linkback'),
+        "main_nav": tourney_main_nav(request.user, 'student_linkback'),
         "bracket": bracket.description,
         "form": form,
         'game': manager.Game(request.user)
@@ -136,7 +136,7 @@ def vote_view(request, **kwargs):
         vote_choices = manager.Vote_Choices(who=request.user.username)
     )
     return render(request, 'mytournament/vote.html', {
-        "main_nav": main_nav(request.user, 'student_linkback'),
+        "main_nav": tourney_main_nav(request.user, 'student_linkback'),
         "bracket": bracket.description,
         "form": form,
         "judge": manager.Get_Judge(request.user.username),
