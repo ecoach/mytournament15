@@ -6,13 +6,18 @@ import json
 
 # Create your models here.
 
+MANAGER_CHOICES = (
+    ('Single_Elimination', 'Single Winner'),
+    ('Absolute_Order', 'Overall Ordering'),
+)
+
 class Bracket(models.Model):
     # [12m_Competitor]
     # [12m_Judge]
     # [12m_Bout]
-    name = models.CharField(max_length=30, null=True, blank=True)
+    #name = models.CharField(max_length=30, null=True, blank=True)
     description = models.CharField(max_length=100, null=True, blank=True)
-    manager = models.CharField(max_length=30, null=True, blank=True)
+    manager = models.CharField(max_length=30, null=True, blank=True, choices=MANAGER_CHOICES)
     ready = models.NullBooleanField()
     finished = models.NullBooleanField()
 
@@ -46,7 +51,6 @@ class Competitor(models.Model):
             pass
         return []
 
-        
     def Get_Beat(self):
         try: 
             ret = json.loads(self.beat)

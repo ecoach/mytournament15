@@ -8,25 +8,36 @@ def steps_nav(user, selected):
             #       'links_to'
             #           'permission_required'
             #               'selected'
-            ['1. Create Brackets', 
+            ['0. New Bracket', 
                 '',  
-                    reverse('tourney:load_brackets'),
+                    reverse('tourney:new_bracket'),
                         'staff',
-                            'load_brackets',
-
+                            'new_bracket',
             ],
-            ['2. Laod Competitors', 
+            ['1. Manage Bracket', 
                 '',  
-                    reverse('tourney:load_competitors'),
+                    reverse('tourney:bracket:manage_bracket', kwargs={'bracket': 3}),
                         'staff',
-                            'load_competitors',
+                            'manage_bracket',
             ],
-            ['3. Load Judges', 
+            ['2. Manage Competitors', 
                 '',  
-                    reverse('tourney:load_judges'),
+                    reverse('tourney:bracket:manage_competitors', kwargs={'bracket': 0}),
                         'staff',
-                            'load_judges',
-            ]
+                            'manage_competitors',
+            ],
+            ['3. Manage Judges', 
+                '',  
+                    reverse('tourney:bracket:manage_judges', kwargs={'bracket': 0}),
+                        'staff',
+                            'manage_judges',
+            ],
+            ['4. Review Bracket', 
+                '',  
+                    reverse('tourney:bracket:review_bracket', kwargs={'bracket': 0}),
+                        'staff',
+                            'review_bracket',
+            ],
         ]
 
     steps_nav = []

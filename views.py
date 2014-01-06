@@ -1,7 +1,7 @@
+from django.shortcuts import render_to_response, render, redirect
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render_to_response, render
 from django.conf import settings
 #from mynav.tourney_nav import *
 from mynav.mycoach_nav import *
@@ -15,7 +15,7 @@ def staff_view(request, **kwargs):
     return render(request, 'mytournament/staff.html', {
         "main_nav": main_nav(request.user, 'staff_view'),
         "tasks_nav": tasks_nav(request.user, 'tourney'),
-        "steps_nav": steps_nav(request.user, 'load_brackets'),
+        "steps_nav": steps_nav(request.user, 'new_bracket'),
     })
 
 @staff_member_required
@@ -29,7 +29,6 @@ def load_brackets_view(request, **kwargs):
             bracket = Bracket.objects.get_or_create(name=row[0])[0]
             bracket.manager=row[1]
             bracket.description=row[2]
-            #bracket.description='Chem 130 - Exam Prep'
             bracket.save()
     return render(request, 'mytournament/load_brackets.html', {
         "main_nav": main_nav(request.user, 'staff_view'),
@@ -45,9 +44,8 @@ def load_competitors_view(request, **kwargs):
     file_path = settings.DIR_UPLOAD_DATA + 'tournaments/load_competitors.csv'
     with open(file_path, 'rb') as csvfile:
         infile = csv.reader(csvfile, delimiter=',', quotechar='"')
-        bracket_prefix = infile.next()[0]
         for row in infile:
-            bracket = get_bracket(bracket_prefix+str(row[1]))
+            bracket = Bracket.objects.get_or_create(id=row[1])[0]
             # populate bracket_id, name, game
             # avoid duplicate names per bracket, update game as needed
             cc = Competitor.objects.get_or_create(bracket=bracket, name=row[0])[0]
@@ -71,9 +69,8 @@ def load_judges_view(request, **kwargs):
     file_path = settings.DIR_UPLOAD_DATA + 'tournaments/load_judges.csv'
     with open(file_path, 'rb') as csvfile:
         infile = csv.reader(csvfile, delimiter=',', quotechar='"')
-        bracket_prefix = infile.next()[0]
         for row in infile:
-            bracket = get_bracket(bracket_prefix+str(row[1]))
+            bracket = Bracket.objects.get_or_create(id=row[1])[0]
             # populate the bracket_id, name, eligable 
             # avoid duplicate names per bracket, update eligable as needed
             cc = Judge.objects.get_or_create(bracket=bracket, name=row[0])[0]
@@ -86,6 +83,60 @@ def load_judges_view(request, **kwargs):
         "steps_nav": steps_nav(request.user, 'load_judges'),
     })
 
+@staff_member_required
+def new_bracket_view(request, **kwargs):
+    if request.method == 'POST':
+        new_bracket_form = New_Bracket_Form(data=request.POST)
+        if form.is_valid():
+            name = form.cleaned_data['name']
+            print name
+            bname = form.cleaned_data['description']
+            print description
+            bname = form.cleaned_data['manager']
+            print manager
+            bracket = Bracket(name=name, description=description, manager=manager)
+            bracket.save()
+    else:
+        new_bracket_form = New_Bracket_Form()
+    return render(request, 'mytournament/new_bracket.html', {
+        "main_nav": main_nav(request.user, 'staff_view'),
+        "tasks_nav": tasks_nav(request.user, 'tourney'),
+        "steps_nav": steps_nav(request.user, 'new_bracket'),
+        'new_bracket_form': new_bracket_form,
+    })
+
+@staff_member_required
+def manage_bracket_view(request, **kwargs):
+    return render(request, 'mytournament/manage_bracket.html', {
+        "main_nav": main_nav(request.user, 'staff_view'),
+        "tasks_nav": tasks_nav(request.user, 'tourney'),
+        "steps_nav": steps_nav(request.user, 'manage_bracket'),
+    })
+
+@staff_member_required
+def manage_competitors_view(request, **kwargs):
+    return render(request, 'mytournament/manage_competitors.html', {
+        "main_nav": main_nav(request.user, 'staff_view'),
+        "tasks_nav": tasks_nav(request.user, 'tourney'),
+        "steps_nav": steps_nav(request.user, 'manage_competitors'),
+    })
+
+@staff_member_required
+def manage_judges_view(request, **kwargs):
+    return render(request, 'mytournament/manage_judges.html', {
+        "main_nav": main_nav(request.user, 'staff_view'),
+        "tasks_nav": tasks_nav(request.user, 'tourney'),
+        "steps_nav": steps_nav(request.user, 'manage_judges'),
+    })
+
+@staff_member_required
+def review_bracket_view(request, **kwargs):
+    return render(request, 'mytournament/manage_bracket.html', {
+        "main_nav": main_nav(request.user, 'staff_view'),
+        "tasks_nav": tasks_nav(request.user, 'tourney'),
+        "steps_nav": steps_nav(request.user, 'review_bracket'),
+    })
+
 def tournament_selector_view(request):
     return render(request, 'mytournament/selector.html', {
         "main_nav": main_nav(request.user, 'student_linkback'),
@@ -93,16 +144,20 @@ def tournament_selector_view(request):
     })
 
 def info_view(request, **kwargs):
-    bname = kwargs["bracket"]
-    bracket = get_bracket(bname)
+    bid = kwargs["bracket"]
+    bracket = get_bracket(bid)
+    if bracket == None:
+        return redirect(reverse('tourney:default'))
     return render(request, 'mytournament/info.html', {
         "main_nav": main_nav(request.user, 'student_view'),
         "bracket": bracket.description 
     })
 
 def register_view(request, **kwargs):
-    bname = kwargs["bracket"]
-    bracket = get_bracket(bname)
+    bid = kwargs["bracket"]
+    bracket = get_bracket(bid)
+    if bracket == None:
+        return redirect(reverse('tourney:default'))
     # load the manager
     manager = eval(bracket.manager)(bracket=bracket)
     
@@ -128,8 +183,10 @@ def register_view(request, **kwargs):
     })
 
 def vote_view(request, **kwargs):
-    bname = kwargs["bracket"]
-    bracket = get_bracket(bname)
+    bid = kwargs["bracket"]
+    bracket = get_bracket(bid)
+    if bracket == None:
+        return redirect(reverse('tourney:default'))
     # load the manager
     manager = eval(bracket.manager)(bracket=bracket)
    
@@ -160,17 +217,11 @@ def vote_view(request, **kwargs):
         "winner": manager.GetWinner()
     })
 
-def get_bracket(bname):
+def get_bracket(bid):
     # find/create the bracket
-    brackets = Bracket.objects.filter(name=bname)
+    brackets = Bracket.objects.filter(name=bid)
     if brackets.count() == 0:
-        #import pdb; pdb.set_trace() 
-        bracket = Bracket.objects.get_or_create(name='00')[0]
-        bracket.manager='Top20'
-        bracket.description='Example for testing'
-        bracket.save()
-    else:
-        bracket = brackets[0] 
-    return bracket
+        return None
+    return brackets[0] 
 
 
