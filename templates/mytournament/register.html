@@ -59,7 +59,7 @@
     <form action="." method="post" enctype="multipart/form-data">{% csrf_token %}
         {{form.as_p}}
         <input type='submit' value='Submit Game'></input>
-        Game on record : {{game}}
+        Game on record : <a href='{% url 'tourney:tourney_pdf' path=competitor.IdGame %}?{% now "U" %}'>{{competitor.game|safe}}</a>
     </form>
 
 

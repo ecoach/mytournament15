@@ -3,10 +3,9 @@
 {% block content %}
     <div class='row-fluid'>
         <div class='span12'>
-            This is where you load new brackets...
             <br>
 
-            <form id='new_bracket_form' action="{% url 'tourney:new_bracket' %}" method="post">{% csrf_token %}
+            <form id='the_form' action="{% url 'tourney:new_bracket' %}" method="post">{% csrf_token %}
             {{ new_bracket_form.as_p }}
             <input type="submit" value="Submit"/> 
             </form>

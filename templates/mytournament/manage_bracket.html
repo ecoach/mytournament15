@@ -1,9 +1,22 @@
 {% extends 'staff_page.html' %}
 
-{% block bottom %}
+{% block content %}
     <div class='row-fluid'>
         <div class='span12'>
-            This is where you load new brackets
+            <br>
+            bracket:<strong> {{bracket.name}} </strong>
+            <br>
+            ready: {{bracket.ready}}
+            <br>
+            finished: {{bracket.finished}}
+            <hr>
+            <br>
+            <form id='the_form' action="{% url 'tourney:bracket:manage_bracket' bracket=bracket.id %}" method="post">{% csrf_token %}
+            {{ edit_bracket_form.as_p }}
+            <input type="submit" value="Submit"/> 
+            </form>
+
+
         </div>
     </div>
 {% endblock %}

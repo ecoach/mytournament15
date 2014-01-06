@@ -1,3 +1,4 @@
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Max
 from django.db.models import F, Q
@@ -7,19 +8,23 @@ import json
 # Create your models here.
 
 MANAGER_CHOICES = (
+    ('Absolute_Order', 'Ordering'),
     ('Single_Elimination', 'Single Winner'),
-    ('Absolute_Order', 'Overall Ordering'),
 )
 
 class Bracket(models.Model):
+    class Meta: 
+        db_table = 'mytournament_bracket'
     # [12m_Competitor]
     # [12m_Judge]
     # [12m_Bout]
-    #name = models.CharField(max_length=30, null=True, blank=True)
-    description = models.CharField(max_length=100, null=True, blank=True)
-    manager = models.CharField(max_length=30, null=True, blank=True, choices=MANAGER_CHOICES)
-    ready = models.NullBooleanField()
-    finished = models.NullBooleanField()
+    name = models.CharField(max_length=100)
+    manager = models.CharField(max_length=30, choices=MANAGER_CHOICES)
+    ready = models.NullBooleanField(default=0)
+    finished = models.NullBooleanField(default=0)
+
+    def __unicode__(self):
+        return str(self.id) + '_' + self.name
 
     def get_bout(self, judge):
         pass
@@ -29,6 +34,8 @@ class Bracket(models.Model):
         # eval(self.manager).repair()
 
 class Competitor(models.Model):
+    class Meta: 
+        db_table = 'mytournament_competitor'
     # [12m_Bout]
     bracket = models.ForeignKey(Bracket)
     name = models.CharField(max_length=30, null=True, blank=True)
@@ -41,6 +48,9 @@ class Competitor(models.Model):
     byes = models.IntegerField(null=True, blank=True)
     points = models.IntegerField(null=True, blank=True)
     status = models.IntegerField(null=True, blank=True)
+
+    def IdGame(self):
+        return '_'.join([str(self.id), self.game])
 
     def Get_Beatby(self):
         try: 
@@ -79,6 +89,8 @@ class Competitor(models.Model):
         self.Set_Beatby(beatby)
     
 class Judge(models.Model):
+    class Meta: 
+        db_table = 'mytournament_judge'
     # [12m_Bout]
     bracket = models.ForeignKey(Bracket)
     name = models.CharField(max_length=30, null=True, blank=True)
@@ -86,6 +98,8 @@ class Judge(models.Model):
     decisions = models.IntegerField(null=True, blank=True)
 
 class Bout(models.Model):
+    class Meta: 
+        db_table = 'mytournament_bout'
     bracket = models.ForeignKey(Bracket)
     bround = models.IntegerField(null=True, blank=True)
     judge = models.ForeignKey(Judge, null=True)
@@ -110,10 +124,18 @@ class Base_Tourney(object):
             cc.byes = 0
             cc.status = -1
             cc.save()
+            return '_'.join([str(cc.id), cc.game])
+        return None
 
-    def Game(self, competitor):
+    def GetCompetitor(self, user):
+        try:
+            return Competitor.objects.get(bracket=self.bracket, name=user.username)
+        except:
+            return ""
+
+    def Game(self, user):
         try:  
-            return Competitor.objects.get(bracket=self.bracket, name=competitor.username).game
+            return Competitor.objects.get(bracket=self.bracket, name=user.username).game
         except:
             return ""
 
@@ -248,6 +270,16 @@ class Base_Tourney(object):
         pass
 
     def Vote_Choices(self, who):
+        import time
+        tt = str(time.time())
+        bout = self.Bout_Assignment(who)
+        if not bout:
+            return [('some_url', "<a href=''>if you get see this please report it...</a>"), 
+                    ('another_url',"<a href=''>for some reason bout not ready for this bracket!</a>")] 
+        return [(bout.compA.game, "<a href='" + reverse('tourney:tourney_pdf', kwargs={'path': bout.comA.IdGame()}) + "?"+tt+"' class='data-log-external' target='_blank'>submission 1 (click to review " + bout.compA.game + ")</a>"), 
+                    (bout.compB.game,"<a href='" + reverse('tourney:tourney_pdf', kwargs={'path': bout.comB.IdGame()}) + "?"+tt+"' class='data-log-external' target='_blank'>submission 2 (click to review " + bout.compB.game + ")</a>")] 
+
+    def Vote_Choices_Old(self, who):
         bout = self.Bout_Assignment(who)
         if not bout:
             return [('some_url', "<a href='" + 'some_url' + "'>if you get see this please report it...</a>"), 

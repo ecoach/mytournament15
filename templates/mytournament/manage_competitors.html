@@ -1,9 +1,22 @@
 {% extends 'staff_page.html' %}
 
-{% block bottom %}
+{% block content %}
     <div class='row-fluid'>
         <div class='span12'>
-            This is where you load competitor data
+            <br>
+            bracket:<strong> {{bracket.name}} </strong>
+            <hr>
+
+            <table class="table table-striped table-bordered table-condensed table-hover">
+                <tr><th>submission</th><th>who</th></tr>
+                {% for cc in competitors%}
+                    <tr>
+                        <td><a href='{% url 'tourney:tourney_pdf' path=cc.IdGame %}?{% now "U" %}'>{{cc.game|safe}}</a></td>
+                        <td>{{cc.name}}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+
         </div>
     </div>
 {% endblock %}

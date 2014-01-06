@@ -20,10 +20,8 @@
     <script type"text/JavaScript" src="{{ STATIC_URL }}nts/js/control.js?{% now "U" %}"></script>
     -->
 
-    <script src="{{STATIC_URL}}/nocoach/js/messages.js?{% now "U" %}" type="text/javascript"></script>
     <script type="text/javascript">
         jQuery(document).ready(function($) {    
-            ecoach.messages.initReady();
         });
     </script>
 
@@ -36,7 +34,7 @@
         <div class='span12'>
             <br>
             <br>
-            Tournament : {{bracket}}
+            Bracket : <strong>{{bracket}}</strong>
         </div>
     </div>
 
