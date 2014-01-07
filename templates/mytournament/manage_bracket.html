@@ -6,10 +6,18 @@
             <br>
             bracket:<strong> {{bracket.name}} </strong>
             <br>
-            ready: {{bracket.ready}}
+            status: {{bracket.status}}
             <br>
-            finished: {{bracket.finished}}
-            <hr>
+            <table>
+                <tr>
+                    <td>registration page: &nbsp;</td>
+                    <td><a href='{{registration_link|safe}}'>{{registration_link|safe}}</a></td>
+                </tr>
+                <tr>
+                    <td>voting page:</td>
+                    <td><a href='{{voting_link|safe}}'>{{voting_link|safe}}</a></td>
+                </tr>
+            </table>
             <br>
             <form id='the_form' action="{% url 'tourney:bracket:manage_bracket' bracket=bracket.id %}" method="post">{% csrf_token %}
             {{ edit_bracket_form.as_p }}

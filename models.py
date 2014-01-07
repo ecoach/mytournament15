@@ -12,6 +12,12 @@ MANAGER_CHOICES = (
     ('Single_Elimination', 'Single Winner'),
 )
 
+BRACKET_STATE_CHOICES = (
+    ('Open', 'Open'),
+    ('Active', 'Active'),
+    ('Finished', 'Finished'),
+)
+
 class Bracket(models.Model):
     class Meta: 
         db_table = 'mytournament_bracket'
@@ -20,18 +26,15 @@ class Bracket(models.Model):
     # [12m_Bout]
     name = models.CharField(max_length=100)
     manager = models.CharField(max_length=30, choices=MANAGER_CHOICES)
-    ready = models.NullBooleanField(default=0)
-    finished = models.NullBooleanField(default=0)
+    status = models.CharField(default='Open', max_length=30, choices=BRACKET_STATE_CHOICES)
 
     def __unicode__(self):
         return str(self.id) + '_' + self.name
 
-    def get_bout(self, judge):
-        pass
-        # check if judge is eligable to make decisions
-        # return choices 
-        # use manager to decide next set of bouts
-        # eval(self.manager).repair()
+COMP_STATUS_CHOICES = (
+    ('Registered', 'Registered'),
+    ('Competing', 'Competing'),
+)
 
 class Competitor(models.Model):
     class Meta: 
@@ -47,10 +50,17 @@ class Competitor(models.Model):
     draws = models.IntegerField(null=True, blank=True)
     byes = models.IntegerField(null=True, blank=True)
     points = models.IntegerField(null=True, blank=True)
-    status = models.IntegerField(null=True, blank=True)
+    status = models.CharField(max_length=30, default='Registered', choices=COMP_STATUS_CHOICES)
 
-    def IdGame(self):
-        return '_'.join([str(self.id), self.game])
+    def Set_Competing(self):
+        self.status = 'Competing'
+        self.save()
+
+    def Game_Link(self):
+        import time
+        tt = str(time.time())
+        link = "<a href='" + reverse('tourney:tourney_pdf', kwargs={'path': self.game}) + "?"+tt+"' class='data-log-external' target='_blank'>" + self.game + "</a>"
+        return link 
 
     def Get_Beatby(self):
         try: 
@@ -115,16 +125,18 @@ class Base_Tourney(object):
         self.bracket = bracket
 
     def Register(self, name, game):
-        if not self.bracket.ready:
+        #if not self.bracket.ready:
+        if self.bracket.status == 'Open':
             cc = Competitor.objects.get_or_create(bracket=self.bracket, name=name)[0]
-            cc.game = game
             cc.wins = 0
             cc.losses = 0
             cc.points = 0
             cc.byes = 0
-            cc.status = -1
+            cc.status = 'Registered'
             cc.save()
-            return '_'.join([str(cc.id), cc.game])
+            cc.game = '_'.join([str(cc.id), game]) # make sure game is unique...
+            cc.save()
+            return cc.game
         return None
 
     def GetCompetitor(self, user):
@@ -142,7 +154,8 @@ class Base_Tourney(object):
     def Setup(self, who):
         # cascade events
         self.Round_Cleanup() 
-        if self.bracket.finished:
+        #if self.bracket.finished:
+        if self.bracket.status == 'Finished':
             return
         judge = self.Get_Judge(who)
         if self.Round_Complete(judge):
@@ -169,9 +182,11 @@ class Base_Tourney(object):
         if len(self.bracket.judge_set.all()) == 0:
             return          
         # if there aren't any judgements left we're done (plus clean up party trash)
-        if len(self.Decisions_Remaining_Bracket()) == 0  or self.bracket.finished == 1:
+        #if len(self.Decisions_Remaining_Bracket()) == 0  or self.bracket.finished == 1:
+        if len(self.Decisions_Remaining_Bracket()) == 0  or self.bracket.status == 'Finished':
             # bracket can finish for other reasons...in which case cleanup can still happen
-            self.bracket.finished = 1
+            #self.bracket.finished = 1
+            self.bracket.status = 'Finished'
             self.bracket.save()
             # find all the dangling bouts (party trash) and delete them
             Bout.objects.filter(bracket=self.bracket, winner__isnull=True).delete()
@@ -182,9 +197,10 @@ class Base_Tourney(object):
         # spin over and clear any that are older than 15 minutes
         dangling = Bout.objects.filter(bracket=self.bracket, winner__isnull=True, btime__isnull=False)
         for bb in dangling:
-            del_minutes = (datetime.now() - bb.btime).seconds / 60
+            tnow = datetime.utcnow()
+            tthen = bb.btime
+            del_minutes = (tnow.replace(tzinfo=None) - tthen.replace(tzinfo=None)).seconds / 60
             if del_minutes >= 15:
-                #bb.delete()
                 bb.judge = None
                 bb.btime = None
                 bb.save()
@@ -217,7 +233,8 @@ class Base_Tourney(object):
         return (last_round['bround__max'] + 1)
 
     def Status(self, who):
-        if self.bracket.finished: # everyone can see once it's done
+        #if self.bracket.finished: # everyone can see once it's done
+        if self.bracket.status == 'Finished': # everyone can see once it's done
             return "MESSAGE_WINNER" 
         if not self.Status_Participating(who):
             return "MESSAGE_NON_PART"
@@ -232,7 +249,7 @@ class Base_Tourney(object):
 
     def GetWinner(self):
         # this should maybe print the ordering results...
-        comps = self.bracket.competitor_set.filter(status=0).extra(select={'rank': 'wins - losses'}).order_by('-rank')
+        comps = self.bracket.competitor_set.filter(status='Competing').extra(select={'rank': 'wins - losses'}).order_by('-rank')
         winners = []
         for cc in comps:
             winners.append([cc.wins, cc.losses, cc.game]) 
@@ -249,7 +266,8 @@ class Base_Tourney(object):
         # check if the voting assignments are all distributed for this round 
         # should already know they are a judge (they would have got non-part msg)
         # this depends on cleanup running first...
-        if self.bracket.finished == 1:
+        #if self.bracket.finished == 1:
+        if self.bracket.status == 'Finished':
             return False
         if self.Decisions_Remaining_Bracket() == 0:
             return False
@@ -264,7 +282,8 @@ class Base_Tourney(object):
         return self.Bout_Assignment(who)
 
     def Status_Vote_Done(self, who):
-        if self.bracket.finished:
+        #if self.bracket.finished:
+        if self.bracket.status == 'Finished':
             return False
         return True
         pass
@@ -276,8 +295,8 @@ class Base_Tourney(object):
         if not bout:
             return [('some_url', "<a href=''>if you get see this please report it...</a>"), 
                     ('another_url',"<a href=''>for some reason bout not ready for this bracket!</a>")] 
-        return [(bout.compA.game, "<a href='" + reverse('tourney:tourney_pdf', kwargs={'path': bout.comA.IdGame()}) + "?"+tt+"' class='data-log-external' target='_blank'>submission 1 (click to review " + bout.compA.game + ")</a>"), 
-                    (bout.compB.game,"<a href='" + reverse('tourney:tourney_pdf', kwargs={'path': bout.comB.IdGame()}) + "?"+tt+"' class='data-log-external' target='_blank'>submission 2 (click to review " + bout.compB.game + ")</a>")] 
+        return [(bout.compA.game, "<a href='" + reverse('tourney:tourney_pdf', kwargs={'path': bout.compA.game}) + "?"+tt+"' class='data-log-external' target='_blank'>submission 1 (click to review " + bout.compA.game + ")</a>"), 
+                    (bout.compB.game,"<a href='" + reverse('tourney:tourney_pdf', kwargs={'path': bout.compB.game}) + "?"+tt+"' class='data-log-external' target='_blank'>submission 2 (click to review " + bout.compB.game + ")</a>")] 
 
     def Vote_Choices_Old(self, who):
         bout = self.Bout_Assignment(who)
@@ -348,7 +367,7 @@ class Single_Elimination(Base_Tourney):
 
     def RePair(self):
         bround = self.Get_Next_Round_Number()
-        comp_res = Competitor.objects.filter(bracket=self.bracket, losses=0, status=0).extra(order_by = ['byes'])
+        comp_res = Competitor.objects.filter(bracket=self.bracket, losses=0, status='Competing').extra(order_by = ['byes'])
         competitors = [x for x in comp_res]
         # check if a winner has already been found...
         if len(competitors) == 1:
@@ -396,12 +415,12 @@ class Absolute_Order(Base_Tourney):
         if len(self.Decisions_Remaining_Bracket()) == 0:
             return
         bround = self.Get_Next_Round_Number()
-        comp_res = Competitor.objects.filter(bracket=self.bracket, status=0)
+        comp_res = Competitor.objects.filter(bracket=self.bracket, status='Competing')
         competitors = [x for x in comp_res]
         # make groups of competitors
         comp_groups = dict()
-        win_set_size = len(set([x.wins for x in self.bracket.competitor_set.filter(status=0)]))
-        comp_set_size = len(self.bracket.competitor_set.filter(status=0))
+        win_set_size = len(set([x.wins for x in self.bracket.competitor_set.filter(status='Competing')]))
+        comp_set_size = len(self.bracket.competitor_set.filter(status='Competing'))
         match_losses = False
         if win_set_size == comp_set_size:
             match_losses = True
@@ -423,7 +442,8 @@ class Absolute_Order(Base_Tourney):
             useful += self.CreateRound(gg, bround)
         # when no bouts are found at all things are done
         if useful == 0:
-            self.bracket.finished = 1
+            #self.bracket.finished = 1
+            self.bracket.status = 'Finished'
             self.bracket.save()
  
     def CreateRound(self, comps, rnd):

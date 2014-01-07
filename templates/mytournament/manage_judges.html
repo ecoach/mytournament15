@@ -7,6 +7,26 @@
             bracket:<strong> {{bracket.name}} </strong>
             <hr>
             <br>
+
+            <form id='theform' action="{% url 'tourney:bracket:manage_judges' bracket=bracket.id %}" method="post" enctype="multipart/form-data">{% csrf_token %}
+
+            {{importform.as_p}}
+            <br>
+            <input type="submit" value="Submit"/> 
+        </form>
+
+        <hr>
+        <table class="table table-striped table-bordered table-condensed table-hover">
+            <tr><th>eligable</th><th>decisions</th><th>who</th></tr>
+            {% for vv in judges %}
+                <tr>
+                    <td>{{vv.eligable}}</td>
+                    <td>{{vv.decisions}}</td>
+                    <td>{{vv.name}}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
         </div>
     </div>
 {% endblock %}

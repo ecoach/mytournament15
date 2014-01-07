@@ -1,8 +1,9 @@
 from django.shortcuts import render_to_response, render, redirect
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, HttpRequest
 from django.conf import settings
+from django.forms.models import inlineformset_factory, modelformset_factory, modelform_factory
 #from mynav.tourney_nav import *
 from mynav.mycoach_nav import *
 from .steps import steps_nav
@@ -130,12 +131,9 @@ def manage_bracket_view(request, **kwargs):
     if request.method == 'POST':
         edit_bracket_form = Edit_Bracket_Form(data=request.POST)
         if edit_bracket_form.is_valid():
-            ready = edit_bracket_form.cleaned_data['ready']
-            print ready
-            finished = edit_bracket_form.cleaned_data['finished']
-            print finished
-            bracket.ready = ready
-            bracket.finished = finished
+            status = edit_bracket_form.cleaned_data['status']
+            print status
+            bracket.status = status
             bracket.save()
     edit_bracket_form = Edit_Bracket_Form(instance=bracket)
     return render(request, 'mytournament/manage_bracket.html', {
@@ -143,6 +141,8 @@ def manage_bracket_view(request, **kwargs):
         "tasks_nav": tasks_nav(request.user, 'tourney'),
         "steps_nav": steps_nav(request.user, 'manage_bracket', bid=bracket.id),
         "bracket": bracket,
+        "registration_link": HttpRequest.build_absolute_uri(request, reverse('tourney:bracket:register', kwargs={'bracket': bracket.id})),
+        "voting_link": HttpRequest.build_absolute_uri(request, reverse('tourney:bracket:vote', kwargs={'bracket': bracket.id})),
         'edit_bracket_form': edit_bracket_form,
     })
 
@@ -152,13 +152,45 @@ def manage_competitors_view(request, **kwargs):
     bracket = get_bracket(bid)
     if bracket == None:
         return redirect(reverse('tourney:choose_bracket'))
-    competitors = Competitor.objects.filter(bracket=bracket)
+    CompFormSet = modelformset_factory(
+        Competitor,
+        can_delete=False,
+        form=Competitor_Form,
+        extra = 0,
+    )
+    if request.method == 'POST':
+        # formset method
+        compformset = CompFormSet(
+            prefix='comps',
+            data=request.POST, 
+        )
+        if compformset.is_valid():
+            compformset.save()
+        # csv method
+        form = Competing_Csv_Form(request.POST, request.FILES)
+        if form.is_valid():
+            cfile = form.cleaned_data['game_file']
+            ids = cfile.read().splitlines()
+            # create the sample
+            for cid in ids:
+                print cid
+                try:
+                    comp = Competitor.objects.get(bracket=bracket, name=cid)
+                    comp.Set_Competing()
+                except:
+                    pass
+    competingform = Competing_Csv_Form()
+    compformset = CompFormSet(
+        prefix='comps',
+        queryset=Competitor.objects.filter(bracket=bracket)
+    )
     return render(request, 'mytournament/manage_competitors.html', {
         "main_nav": main_nav(request.user, 'staff_view'),
         "tasks_nav": tasks_nav(request.user, 'tourney'),
         "steps_nav": steps_nav(request.user, 'manage_competitors', bid=bracket.id),
         "bracket": bracket,
-        "competitors": competitors,
+        "competingform": competingform,
+        "compformset": compformset,
     })
 
 @staff_member_required
@@ -167,11 +199,28 @@ def manage_judges_view(request, **kwargs):
     bracket = get_bracket(bid)
     if bracket == None:
         return redirect(reverse('tourney:choose_bracket'))
+    if request.method == 'POST':
+        importform = Import_Judges_Form(
+            data=request.POST, 
+        )
+        if importform.is_valid():
+            trigger = importform.cleaned_data['trigger']
+            print trigger
+            comps = Competitor.objects.filter(bracket=bracket, status='Competing')
+            for cc in comps:
+                judge = Judge.objects.get_or_create(bracket=bracket, name=cc.name)[0]
+                judge.eligable = 3
+                judge.decisions = 0
+                judge.save() 
+    importform = Import_Judges_Form()
+    judges = Judge.objects.filter(bracket=bracket)
     return render(request, 'mytournament/manage_judges.html', {
         "main_nav": main_nav(request.user, 'staff_view'),
         "tasks_nav": tasks_nav(request.user, 'tourney'),
         "steps_nav": steps_nav(request.user, 'manage_judges', bid=bracket.id),
         "bracket": bracket,
+        "judges": judges,
+        "importform": importform,
     })
 
 @staff_member_required
@@ -180,11 +229,13 @@ def review_bracket_view(request, **kwargs):
     bracket = get_bracket(bid)
     if bracket == None:
         return redirect(reverse('tourney:choose_bracket'))
+    comps = Competitor.objects.filter(bracket=bracket, status='Competing')
     return render(request, 'mytournament/review_bracket.html', {
         "main_nav": main_nav(request.user, 'staff_view'),
         "tasks_nav": tasks_nav(request.user, 'tourney'),
         "steps_nav": steps_nav(request.user, 'review_bracket', bid=bracket.id),
         "bracket": bracket,
+        "comps": comps,
     })
 
 def tournament_selector_view(request):
@@ -228,7 +279,7 @@ def pdf_register_view(request, **kwargs):
 
     return render(request, 'mytournament/register.html', {
         "main_nav": main_nav(request.user, 'student_view'),
-        "bracket": bracket.name,
+        "bracket": bracket,
         "form": form,
         'competitor': manager.GetCompetitor(request.user)
     })

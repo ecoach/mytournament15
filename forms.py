@@ -22,7 +22,7 @@ class New_Bracket_Form(forms.ModelForm):
         model = Bracket
         fields = ['name', 'manager']
         widgets = {
-            'name': forms.TextInput(attrs={'placeholder':"tourney name", 'class':'input-xxlarge'}),
+            'name': forms.TextInput(attrs={'placeholder':"bracket name", 'class':'input-xxlarge'}),
         }
 
 class Select_Bracket_Form(forms.Form):
@@ -32,9 +32,24 @@ class Edit_Bracket_Form(forms.ModelForm):
 
     class Meta:
         model = Bracket
-        fields = ['ready', 'finished']
+        fields = ['status']
 
 class Pdf_Register_Form(forms.Form):
-    game_file = forms.FileField(label='Select a file', required=True)
+    game_file = forms.FileField(label='Upload a pdf file', required=True)
 
+class Competing_Csv_Form(forms.Form):
+    game_file = forms.FileField(label='Load list to mark as competing', required=True)
+
+class Competitor_Form(forms.ModelForm):
+
+    class Meta:
+        model = Competitor
+        fields = ['status']
+
+    def comp_name(self):
+        mod = self.instance
+        return mod.name
+
+class Import_Judges_Form(forms.Form):
+    trigger = forms.MultipleChoiceField(required=True, widget=forms.CheckboxSelectMultiple, choices=(('trigger', "Import competitors as judges"),))
 

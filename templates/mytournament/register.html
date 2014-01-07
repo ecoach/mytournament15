@@ -1,12 +1,8 @@
 {% extends 'mytournament/base_tournament.html' %}
 
 {% block bottom %}
-    You have to bring game to the tournament...
-    <br>
-    <br>
 
     <script type="text/javascript">
-       
         var brot;
         var grot;
         var boy; 
@@ -32,9 +28,10 @@
         }
     </script>
 
-<!-- 
->-|{~:)
--->
+{% if bracket.status = 'Open' %} 
+    You have to bring game to the tournament...
+    <br>
+    <br>
     <table>
         <tr>
             <td>
@@ -59,8 +56,14 @@
     <form action="." method="post" enctype="multipart/form-data">{% csrf_token %}
         {{form.as_p}}
         <input type='submit' value='Submit Game'></input>
-        Game on record : <a href='{% url 'tourney:tourney_pdf' path=competitor.IdGame %}?{% now "U" %}'>{{competitor.game|safe}}</a>
     </form>
+{% else %}
+    Registration is no longer open...
+    <br>
+    <br>
+{% endif %}
+
+    Your upload : <a href='{% url 'tourney:tourney_pdf' path=competitor.game %}?{% now "U" %}'>{{competitor.game|safe}}</a>
 
 
 {% endblock %}
