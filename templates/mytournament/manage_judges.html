@@ -16,6 +16,11 @@
         </form>
 
         <hr>
+        total judges:<strong> {{judges|length}} </strong>
+        <br>
+        percent complete:<strong> {{percent_complete}}% </strong>
+        <br>
+        <br>
         <table class="table table-striped table-bordered table-condensed table-hover">
             <tr><th>eligable</th><th>decisions</th><th>who</th></tr>
             {% for vv in judges %}

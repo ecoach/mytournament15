@@ -4,6 +4,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, HttpRequest
 from django.conf import settings
 from django.forms.models import inlineformset_factory, modelformset_factory, modelform_factory
+import numpy as np
 #from mynav.tourney_nav import *
 from mynav.mycoach_nav import *
 from .steps import steps_nav
@@ -214,12 +215,14 @@ def manage_judges_view(request, **kwargs):
                 judge.save() 
     importform = Import_Judges_Form()
     judges = Judge.objects.filter(bracket=bracket).extra(select={'rank': 'eligable - decisions'}).order_by('-rank')
+    percent_complete = int(np.mean([float(vv.decisions)/float(vv.eligable) for vv in judges])*100)
     return render(request, 'mytournament/manage_judges.html', {
         "main_nav": main_nav(request.user, 'staff_view'),
         "tasks_nav": tasks_nav(request.user, 'tourney'),
         "steps_nav": steps_nav(request.user, 'manage_judges', bid=bracket.id),
         "bracket": bracket,
         "judges": judges,
+        "percent_complete": percent_complete,
         "importform": importform,
     })
 
