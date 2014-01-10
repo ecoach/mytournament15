@@ -28,6 +28,7 @@ urlpatterns = patterns('',
     #url(r'^load_brackets/',  login_required(load_brackets_view), name='load_brackets'),
     #url(r'^load_judges/',  login_required(load_judges_view), name='load_judges'),
     #url(r'^load_competitors/',  login_required(load_competitors_view), name='load_competitors'),
+    url(r'^download_mysql_db/', login_required(Download_Mysql_View), name='download_mysql'), # hack for now
     url(r'^tourney_pdf/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.DIR_TOURNEY_PDF}, name='tourney_pdf'),
     url(r'^(?P<bracket>[a-z0-9\-]+)/',  include(tournament_patterns, namespace='bracket')),
     url(r'^',                   login_required(tournament_selector_view), name='default'),
