@@ -229,7 +229,7 @@ def review_bracket_view(request, **kwargs):
     bracket = get_bracket(bid)
     if bracket == None:
         return redirect(reverse('tourney:choose_bracket'))
-    comps = Competitor.objects.filter(bracket=bracket, status='Competing')
+    comps = Competitor.objects.filter(bracket=bracket, status='Competing').extra(select={'rank': 'wins - losses'}).order_by('-rank')
     return render(request, 'mytournament/review_bracket.html', {
         "main_nav": main_nav(request.user, 'staff_view'),
         "tasks_nav": tasks_nav(request.user, 'tourney'),
