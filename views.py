@@ -357,7 +357,6 @@ def get_bracket(bid):
 
 @staff_member_required
 def Download_Mysql_View(request):
-    import pdb; pdb.set_trace() 
     import os, time
     # if not admin don't do it
     staffmember = request.user.is_staff
