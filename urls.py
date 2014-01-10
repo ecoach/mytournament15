@@ -22,7 +22,7 @@ tournament_patterns = patterns('',
 )
 
 urlpatterns = patterns('',
-    url(r'^staff/',  login_required(new_bracket_view), name='staff'),
+    url(r'^staff/',  login_required(choose_bracket_view), name='staff'),
     url(r'^new_bracket/',  login_required(new_bracket_view), name='new_bracket'),
     url(r'^choose_bracket/',  login_required(choose_bracket_view), name='choose_bracket'),
     #url(r'^load_brackets/',  login_required(load_brackets_view), name='load_brackets'),
