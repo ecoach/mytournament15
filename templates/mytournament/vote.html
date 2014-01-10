@@ -58,7 +58,7 @@
             <tr>
                 <td>{{ww.0}}</td>
                 <td>{{ww.1}}</td>
-                <td><a href='{{ww.2}}' data-log-category='external-link' data-log-action='{{ww.2}}' data-log-label='winner' target='_blank'>{{ww.2}}</a></td>
+                <td>{{ww.2|safe}}</td>
             </tr>
         {% endfor %}
     </table>

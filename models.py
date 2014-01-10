@@ -252,7 +252,7 @@ class Base_Tourney(object):
         comps = self.bracket.competitor_set.filter(status='Competing').extra(select={'rank': 'wins - losses'}).order_by('-rank')
         winners = []
         for cc in comps:
-            winners.append([cc.wins, cc.losses, cc.game]) 
+            winners.append([cc.wins, cc.losses, cc.Game_Link]) 
         return winners
 
     def Status_Participating(self, who):
