@@ -213,7 +213,7 @@ def manage_judges_view(request, **kwargs):
                 judge.decisions = 0
                 judge.save() 
     importform = Import_Judges_Form()
-    judges = Judge.objects.filter(bracket=bracket)
+    judges = Judge.objects.filter(bracket=bracket).extra(select={'rank': 'eligable - decisions'}).order_by('-rank')
     return render(request, 'mytournament/manage_judges.html', {
         "main_nav": main_nav(request.user, 'staff_view'),
         "tasks_nav": tasks_nav(request.user, 'tourney'),
