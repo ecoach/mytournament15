@@ -1,0 +1,32 @@
+{% extends 'staff_page.html' %}
+
+{% block content %}
+    <div class='row-fluid'>
+        <div class='span12'>
+            <hr>
+
+            <form id='theform' action="{% url 'tourney:manage_roster' %}" method="post" enctype="multipart/form-data">{% csrf_token %}
+                <hr>
+                <br>
+                {{form.as_p}}
+                <input type="submit" value="Submit"/> 
+                <br>
+                <hr>
+                roster length:<strong> {{roster|length}} </strong>
+            </form>
+            <table class="table table-striped table-bordered table-condensed table-hover">
+                <tr><th>name</th></tr>
+                {% for rr in roster %}
+                    <tr>
+                        <td>{{rr.name}}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+            <br>
+
+        </div>
+    </div>
+{% endblock %}
+
+
+

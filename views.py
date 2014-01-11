@@ -4,8 +4,6 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, HttpRequest
 from django.conf import settings
 from django.forms.models import inlineformset_factory, modelformset_factory, modelform_factory
-import numpy as np
-#from mynav.tourney_nav import *
 from mynav.mycoach_nav import *
 from .steps import steps_nav
 from .models import *
@@ -86,6 +84,29 @@ def load_judges_view(request, **kwargs):
     })
 
 @staff_member_required
+def manage_roster_view(request, **kwargs):
+    if request.method == 'POST':
+        form = Roster_Csv_Form(request.POST, request.FILES)
+        if form.is_valid():
+            cfile = form.cleaned_data['roster_file']
+            ids = cfile.read().splitlines()
+            # delete roster
+            Roster.objects.all().delete()
+            # create new roster
+            for cid in ids:
+                print cid
+                member = Roster.objects.get_or_create(name=cid)
+    form = Roster_Csv_Form()
+    roster = Roster.objects.all()
+    return render(request, 'mytournament/manage_roster.html', {
+        "main_nav": main_nav(request.user, 'staff_view'),
+        "tasks_nav": tasks_nav(request.user, 'tourney'),
+        "steps_nav": steps_nav(request.user, 'manage_roster'),
+        "form": form,
+        "roster": roster,
+    })
+
+@staff_member_required
 def new_bracket_view(request, **kwargs):
     if request.method == 'POST':
         new_bracket_form = New_Bracket_Form(data=request.POST)
@@ -135,7 +156,29 @@ def manage_bracket_view(request, **kwargs):
             status = edit_bracket_form.cleaned_data['status']
             print status
             bracket.status = status
+            name = edit_bracket_form.cleaned_data['name']
+            print name
+            bracket.name = name
             bracket.save()
+            # take care of auto promotion
+            trigger = edit_bracket_form.cleaned_data['trigger']
+            if trigger and bracket.status=='Active':
+                ids = [rr.name for rr in Roster.objects.all()]
+                for cid in ids:
+                    print cid
+                    try:
+                        # promote to competing from roster
+                        comp = Competitor.objects.get(bracket=bracket, name=cid)
+                        comp.Set_Competing()
+                    except:
+                        pass
+                    # promote to juding from roster
+                    judge = Judge.objects.get_or_create(bracket=bracket, name=cid)
+                    judge[0].eligable = 3
+                    # don't overwrite existing decisions
+                    if judge[1]:
+                        judge[0].decisions = 0
+                    judge[0].save() 
     edit_bracket_form = Edit_Bracket_Form(instance=bracket)
     return render(request, 'mytournament/manage_bracket.html', {
         "main_nav": main_nav(request.user, 'staff_view'),
@@ -209,20 +252,20 @@ def manage_judges_view(request, **kwargs):
             print trigger
             comps = Competitor.objects.filter(bracket=bracket, status='Competing')
             for cc in comps:
-                judge = Judge.objects.get_or_create(bracket=bracket, name=cc.name)[0]
-                judge.eligable = 3
-                judge.decisions = 0
-                judge.save() 
+                judge = Judge.objects.get_or_create(bracket=bracket, name=cc.name)
+                judge[0].eligable = 3
+                # don't overwrite existing decisions
+                if judge[1]:
+                    judge[0].decisions = 0
+                judge[0].save() 
     importform = Import_Judges_Form()
     judges = Judge.objects.filter(bracket=bracket).extra(select={'rank': 'eligable - decisions'}).order_by('-rank')
-    percent_complete = int(np.mean([float(vv.decisions)/float(vv.eligable) for vv in judges])*100)
     return render(request, 'mytournament/manage_judges.html', {
         "main_nav": main_nav(request.user, 'staff_view'),
         "tasks_nav": tasks_nav(request.user, 'tourney'),
         "steps_nav": steps_nav(request.user, 'manage_judges', bid=bracket.id),
         "bracket": bracket,
         "judges": judges,
-        "percent_complete": percent_complete,
         "importform": importform,
     })
 

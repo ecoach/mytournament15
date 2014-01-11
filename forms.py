@@ -29,13 +29,17 @@ class Select_Bracket_Form(forms.Form):
     bracket = forms.ModelChoiceField(required=True, label='Select a Bracket', queryset=Bracket.objects.all().order_by('-id'), widget=forms.Select(attrs={'onchange': "$('#theform').submit();"}))
 
 class Edit_Bracket_Form(forms.ModelForm):
+    trigger = forms.MultipleChoiceField(required=False, widget=forms.CheckboxSelectMultiple(attrs={'checked' : 'checked'}), choices=(('trigger', "Promote everyone on roster to competing and judging while activating tournament"),))
 
     class Meta:
         model = Bracket
-        fields = ['status']
+        fields = ['status', 'name']
 
 class Pdf_Register_Form(forms.Form):
     game_file = forms.FileField(label='Upload a pdf file', required=True)
+
+class Roster_Csv_Form(forms.Form):
+    roster_file = forms.FileField(label='Load list to use as roster', required=True)
 
 class Competing_Csv_Form(forms.Form):
     game_file = forms.FileField(label='Load list to mark as competing', required=True)

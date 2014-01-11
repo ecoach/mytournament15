@@ -18,9 +18,10 @@
                     <td><a href='{{voting_link|safe}}'>{{voting_link|safe}}</a></td>
                 </tr>
             </table>
-            <br>
+            <hr>
             <form id='the_form' action="{% url 'tourney:bracket:manage_bracket' bracket=bracket.id %}" method="post">{% csrf_token %}
             {{ edit_bracket_form.as_p }}
+            <br>
             <input type="submit" value="Submit"/> 
             </form>
 

@@ -4,8 +4,20 @@ from django.db.models import Max
 from django.db.models import F, Q
 from datetime import datetime
 import json
+import numpy as np
 
 # Create your models here.
+
+ROSTER_STATUS_CHOICES = (
+    ('Enrolled', 'Enrolled'),
+)
+
+class Roster(models.Model):
+    class Meta: 
+        db_table = 'mytournament_roster'
+    name = models.CharField(max_length=30, null=True, blank=True)
+    status = models.CharField(max_length=30, default='Enrolled', choices=ROSTER_STATUS_CHOICES)
+ 
 
 MANAGER_CHOICES = (
     ('Absolute_Order', 'Ordering'),
@@ -30,6 +42,16 @@ class Bracket(models.Model):
 
     def __unicode__(self):
         return str(self.id) + '_' + self.name
+
+    def percent_complete(self):
+        judges = Judge.objects.filter(bracket=self).extra(select={'rank': 'eligable - decisions'}).order_by('-rank')
+        try:
+            return int(np.mean([float(vv.decisions)/float(vv.eligable) for vv in judges])*100)
+        except:
+            return 0
+
+    def num_judges(self):
+        return len(Judge.objects.filter(bracket=self))
 
 COMP_STATUS_CHOICES = (
     ('Registered', 'Registered'),

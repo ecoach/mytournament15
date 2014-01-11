@@ -10,6 +10,8 @@
             <form id='theform' action="{% url 'tourney:bracket:manage_competitors' bracket=bracket.id %}" method="post" enctype="multipart/form-data">{% csrf_token %}
 
             {{competingform.as_p}}
+            <br>
+            <input type="submit" value="Submit"/> 
 
             <hr>
             total competitors:<strong> {{compformset|length}} </strong>
