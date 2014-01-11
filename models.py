@@ -6,6 +6,7 @@ from datetime import datetime
 import json
 import numpy as np
 
+
 # Create your models here.
 
 ROSTER_STATUS_CHOICES = (
