@@ -6,7 +6,6 @@
             <br>
             bracket:<strong> {{bracket.name}} </strong>
             <hr>
-            <br>
 
             <form id='theform' action="{% url 'tourney:bracket:manage_judges' bracket=bracket.id %}" method="post" enctype="multipart/form-data">{% csrf_token %}
 
