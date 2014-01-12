@@ -60,7 +60,7 @@ class Select_Bracket_Form(forms.Form):
     bracket = forms.ModelChoiceField(required=True, label='Select a Bracket', queryset=Bracket.objects.all().order_by('-id'), widget=forms.Select(attrs={'onchange': "$('#theform').submit();"}))
 
 class Edit_Bracket_Form(forms.ModelForm):
-    trigger = forms.MultipleChoiceField(required=False, label='One click activation', widget=forms.CheckboxSelectMultiple(attrs={}), choices=(('trigger', "Activate bracket for voting and promote everyone on roster to competing and judging"),))
+    trigger = forms.MultipleChoiceField(required=False, label='One click activation', widget=forms.CheckboxSelectMultiple(attrs={}), choices=(('trigger', "If you have loaded a 'Roster' (tabs above) then you can activate bracket for voting and promote everyone on the roster to competing and judging"),))
 
     class Meta:
         model = Bracket
