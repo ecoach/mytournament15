@@ -31,6 +31,16 @@ BRACKET_STATE_CHOICES = (
     ('Finished', 'Finished'),
 )
 
+MANAGER_CHOICES = (
+    ('Absolute_Order', 'Ordering'),
+    ('Single_Elimination', 'Single Winner'),
+)
+
+FEEDBACK_CHOICES = (
+    ('Required', 'Required'),
+    ('Optional', 'Optional'),
+)
+
 class Bracket(models.Model):
     class Meta: 
         db_table = 'mytournament_bracket'
@@ -39,6 +49,7 @@ class Bracket(models.Model):
     # [12m_Bout]
     name = models.CharField(max_length=100)
     prompt = models.TextField(null=True, blank=True)
+    feedback_option = models.CharField(default='Optional', max_length=30, choices=FEEDBACK_CHOICES)
     manager = models.CharField(max_length=30, choices=MANAGER_CHOICES)
     status = models.CharField(default='Open', max_length=30, choices=BRACKET_STATE_CHOICES)
 
@@ -247,6 +258,9 @@ class Base_Tourney(object):
         #remain = all_rounds.filter(~Q(judge=judge), bround=current_round, winner__isnull=True)
         return (len(remain) == 0)
 
+    def Default_Eligable(self):
+        return 1
+
     def RePair(self):
         pass
 
@@ -445,6 +459,9 @@ class Absolute_Order(Base_Tourney):
     def Advancing(self):
         # everyone advances
         pass
+
+    def Default_Eligable(self):
+        return 3
 
     def RePair(self):
         if len(self.Decisions_Remaining_Bracket()) == 0:

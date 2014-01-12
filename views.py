@@ -115,7 +115,9 @@ def new_bracket_view(request, **kwargs):
             print name
             manager = new_bracket_form.cleaned_data['manager']
             print manager
-            bracket = Bracket(name=name, manager=manager)
+            feedback_option = new_bracket_form.cleaned_data['feedback_option']
+            print feedback_option
+            bracket = Bracket(name=name, manager=manager, feedback_option=feedback_option)
             bracket.save()
             return redirect(reverse('tourney:bracket:manage_bracket', kwargs={'bracket': bracket.id}))
     else:
@@ -150,6 +152,8 @@ def manage_bracket_view(request, **kwargs):
     bracket = get_bracket(bid)
     if bracket == None:
         return redirect(reverse('tourney:choose_bracket'))
+    # load the manager
+    manager = eval(bracket.manager)(bracket=bracket)
     if request.method == 'POST':
         edit_bracket_form = Edit_Bracket_Form(data=request.POST)
         if edit_bracket_form.is_valid():
@@ -162,6 +166,9 @@ def manage_bracket_view(request, **kwargs):
             prompt = edit_bracket_form.cleaned_data['prompt']
             print prompt
             bracket.prompt = prompt
+            feedback_option = edit_bracket_form.cleaned_data['feedback_option']
+            print feedback_option
+            bracket.feedback_option = feedback_option
             bracket.save()
             # take care of auto promotion
             trigger = edit_bracket_form.cleaned_data['trigger']
@@ -179,7 +186,7 @@ def manage_bracket_view(request, **kwargs):
                         pass
                     # promote to juding from roster
                     judge = Judge.objects.get_or_create(bracket=bracket, name=cid)
-                    judge[0].eligable = 3
+                    judge[0].eligable = manager.Default_Eligable()
                     # don't overwrite existing decisions
                     if judge[1]:
                         judge[0].decisions = 0
@@ -248,6 +255,8 @@ def manage_judges_view(request, **kwargs):
     bracket = get_bracket(bid)
     if bracket == None:
         return redirect(reverse('tourney:choose_bracket'))
+    # load the manager
+    manager = eval(bracket.manager)(bracket=bracket)
     if request.method == 'POST':
         importform = Import_Judges_Form(
             data=request.POST, 
@@ -258,7 +267,7 @@ def manage_judges_view(request, **kwargs):
             comps = Competitor.objects.filter(bracket=bracket, status='Competing')
             for cc in comps:
                 judge = Judge.objects.get_or_create(bracket=bracket, name=cc.name)
-                judge[0].eligable = 3
+                judge[0].eligable = manager.Default_Eligable()
                 # don't overwrite existing decisions
                 if judge[1]:
                     judge[0].decisions = 0
@@ -312,7 +321,6 @@ def pdf_register_view(request, **kwargs):
         return redirect(reverse('tourney:default'))
     # load the manager
     manager = eval(bracket.manager)(bracket=bracket)
-    
     if request.method == 'POST':
         form = Pdf_Register_Form(request.POST, request.FILES)
         if form.is_valid():
@@ -389,9 +397,15 @@ def vote_view(request, **kwargs):
             manager.Record_Vote(bout, request.user.username, winner, feedbackA, feedbackB)
             manager.Setup(request.user.username) 
             bout = manager.Get_Bout(request.user.username)
-            form = Voter_Form(instance=bout)
+            if bout == None:
+                form = Voter_Form(instance=bout)
+            else:
+                form = Voter_Form(instance=bout, initial={'boutid': bout.id})
     else:
-        form = Voter_Form(instance=bout)
+        if bout == None:
+            form = Voter_Form(instance=bout)
+        else:
+            form = Voter_Form(instance=bout, initial={'boutid': bout.id})
     try:
         compA_link = HttpRequest.build_absolute_uri(request, bout.compA.Game_Url())
         compB_link = HttpRequest.build_absolute_uri(request, bout.compB.Game_Url())

@@ -9,26 +9,41 @@ class Register_Form(forms.Form):
 BALLOT_CHOICES = (('A', 'Vote for A',), ('B', 'Vote for B',))
 class Voter_Form(forms.ModelForm):
     ballot = forms.ChoiceField(required=False, label='', widget=forms.RadioSelect(), choices=BALLOT_CHOICES)
+    boutid = forms.CharField(required=True, max_length=100, widget=forms.HiddenInput())
 
     class Meta:
         model = Bout
-        fields = ['feedbackA', 'feedbackB']
+        fields = ['feedbackA', 'feedbackB', 'boutid']
 
         widgets = {
             'feedbackA': forms.Textarea(attrs={'placeholder':"See feedback instructions...", 'rows':20}),
             'feedbackB': forms.Textarea(attrs={'placeholder':"See feedback instructions...", 'rows':20}),
         }
 
-    def clean_ballot(self):
-        ballot = self.cleaned_data['ballot']
-        if len(ballot) == 0:
-            raise forms.ValidationError(self.fields['ballot'].error_messages['invalid'])
-        return ballot
-
     def __init__(self, *args, **kwargs):
         super(Voter_Form, self).__init__(*args, **kwargs)
         self.fields['feedbackA'].label = 'Feedback on A:'
         self.fields['feedbackB'].label = 'Feedback on B:'
+
+    def clean_ballot(self):
+        ballot = self.cleaned_data['ballot']
+        if len(ballot) == 0:
+            raise forms.ValidationError('Error: Step 4 - must select choice')
+        return ballot
+
+    def clean_feedbackA(self):
+        bout = Bout.objects.get(pk=self.data['boutid'])
+        feedbackA = self.cleaned_data['feedbackA']
+        if bout.bracket.feedback_option == 'Required' and len(feedbackA) == 0:
+            raise forms.ValidationError('Error: Step 2 - must provide some feedback')
+        return feedbackA
+
+    def clean_feedbackB(self):
+        bout = Bout.objects.get(pk=self.data['boutid'])
+        feedbackB = self.cleaned_data['feedbackB']
+        if bout.bracket.feedback_option == 'Required' and len(feedbackB) == 0:
+            raise forms.ValidationError('Error: Step 3 - must provide some feedback')
+        return feedbackB
 
 # management forms
 
@@ -36,7 +51,7 @@ class New_Bracket_Form(forms.ModelForm):
 
     class Meta:
         model = Bracket
-        fields = ['name', 'manager']
+        fields = ['name', 'manager', 'feedback_option']
         widgets = {
             'name': forms.TextInput(attrs={'placeholder':"bracket name", 'class':'input-xxlarge'}),
         }
@@ -49,10 +64,11 @@ class Edit_Bracket_Form(forms.ModelForm):
 
     class Meta:
         model = Bracket
-        fields = ['name', 'prompt', 'status']
+        fields = ['name', 'feedback_option', 'prompt', 'status']
 
         widgets = {
-            'prompt': forms.Textarea(attrs={'placeholder':"Voting instructions...", 'class':'input-xxlarge'}),
+            'prompt': forms.Textarea(attrs={'placeholder':"Voting and feedback instructions...", 'class':'input-xxlarge'}),
+            #'feedback_option': forms.Select(),
         }
     """
     def __init__(self, *args, **kwargs):

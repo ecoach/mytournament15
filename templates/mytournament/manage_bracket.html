@@ -6,16 +6,18 @@
             <br>
             bracket:<strong> {{bracket.name}} </strong>
             <br>
+            feedback option: {{bracket.feedback_option}}
+            <br>
             status: {{bracket.status}}
             <br>
-            <table>
+            <table border=0>
                 <tr>
                     <td>registration page: &nbsp;</td>
-                    <td><a href='{{registration_link|safe}}'>{{registration_link|safe}}</a></td>
+                    <td style="padding:0px 200px 0px 20px;"><a href='{{registration_link|safe}}'>{{registration_link|safe}}</a></td>
                 </tr>
                 <tr>
                     <td>voting page:</td>
-                    <td><a href='{{voting_link|safe}}'>{{voting_link|safe}}</a></td>
+                    <td style="padding:0px 200px 0px 20px;"><a href='{{voting_link|safe}}'>{{voting_link|safe}}</a></td>
                 </tr>
             </table>
             <hr>

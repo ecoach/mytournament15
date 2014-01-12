@@ -95,26 +95,33 @@
 
         <!-- instructions pane -->
         <div class="tab-pane active" id="votepane1">
-            <font color='red'>{{form.errors}}</font>
+            {{form.boutid}}
+            <font color='red'>
+            {{form.ballot.errors}}
+            {{form.feedbackA.errors}}
+            {{form.feedbackB.errors}}
+            </font>
             Votes remaining: {{remaining}}
             <br>
-            <br>
-            Feedback instructions: 
-            <br>
-            <br>
-            <blockquote>
-                <p>
-                "{{bracket.prompt}}"
-                </p>
-                <small><cite title="">couse instructor</cite></small>
-            </blockquote>
+            {% if bracket.prompt != ''  %}
+                <br>
+                Voting and feedback instructions: 
+                <br>
+                <br>
+                <blockquote>
+                    <p>
+                    "{{bracket.prompt}}"
+                    </p>
+                    <small><cite title="">couse instructor</cite></small>
+                </blockquote>
+            {% endif %}
             <hr>
             Technical instructions:
             <br>
             <ol>
                 <li>Use the tabs above to review submissions and provide feedback</li>
                 <li>Cast your vote as to which is better</li>
-                <li><em><strong>You have a limited amount of time to provide feedback and vote</strong></em></li> 
+                <li><em><strong>This comparison must be completed within 20 minutes or it may be reasisgned!</strong></em></li> 
             </ol>
         </div>
 
