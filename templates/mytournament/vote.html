@@ -1,5 +1,12 @@
 {% extends 'mytournament/base_tournament.html' %}
 
+{% block head_extra2 %}
+    $('#voteTabs a').click(function (e) {
+        e.preventDefault()
+        $(this).tab('show')
+    })
+{% endblock %}
+
 {% block bottom %}
 
 {% if status == 'MESSAGE_NON_PART' %}  
@@ -54,7 +61,7 @@
             <th>Losses</th>
             <th>Game</th>
         </tr>
-        {% for ww in winner %}
+        {% for ww in competitors %}
             <tr>
                 <td>{{ww.0}}</td>
                 <td>{{ww.1}}</td>
@@ -62,48 +69,100 @@
             </tr>
         {% endfor %}
     </table>
-    <!--
-    <a href='{{winner}}' data-log-category='external-link' data-log-action='{{winner}}' data-log-label='winner' target='_blank'>{{winner}}</a>
-    -->
 {% endif %} 
 
 {% if status == 'MESSAGE_VOTE' %}  
-    Review these two submissions, <strong><em> give it some thought,</em></strong> and vote for the one which <b><em>you think is better. </em></b>
-    <br>
-    <form action="." method="post" enctype="multipart/form-data">{% csrf_token %}
-            <!-- 
-                messy snag from online example 
-                http://stackoverflow.com/questions/6218299/django-form-radio-input-layout
-            -->
-            {% for choice in form.vote.field.choices %}
+<form id='theform' action="{% url 'tourney:bracket:vote' bracket=bracket.id %}" method="post">{% csrf_token %}
+
+    <!-- Nav tabs -->
+    <ul id="voteTabs" class="nav nav-tabs">
+        <li class="active">
+            <a href='#votepane1'>Step 1: Instructions</a>
+        </li>
+        <li class="">
+            <a href='#votepane2'>Step 2: Review A</a>
+        </li>
+        <li class="">
+            <a href='#votepane3'>Step 3: Review B</a>
+        </li>
+        <li class="">
+            <a href='#votepane4'>Step 4: Cast Vote</a>
+        </li>
+    </ul>
+
+    <!-- Tab panes -->
+    <div class="tab-content">
+
+        <!-- instructions pane -->
+        <div class="tab-pane active" id="votepane1">
+            <font color='red'>{{form.errors}}</font>
+            Votes remaining: {{remaining}}
             <br>
-                <label for="id_{{ form.vote.html_name }}_{{ forloop.counter0 }}">
-                    <input type="radio"
-                        id="id_{{ form.vote.html_name }}_{{ forloop.counter0 }}"
-                        value="{{ choice.0 }}"
-                        name="{{ form.vote.html_name }}" />
-                    &nbsp;
-                    &nbsp;
-                    {{ choice.1|safe}}
-                    {% comment %}
-                    {% if choice.0 == 'one' %}
-                        {# Necessary field here #}
-                        {{ form.bar }}
-                    {% else %}
-                        No Textbox
-                    {% endif %}
-                    {% endcomment %}
-                </label>
-            {{form.bout}}
-            {% endfor %}
-    <br>
-    <br>
-        <input type='submit' value='Submit Vote'></input>
-        {{judge.decisions}} decisions / {{judge.eligable}} required
-    </form>
+            <br>
+            Feedback instructions: 
+            <br>
+            <br>
+            <blockquote>
+                <p>
+                "{{bracket.prompt}}"
+                </p>
+                <small><cite title="">couse instructor</cite></small>
+            </blockquote>
+            <hr>
+            Technical instructions:
+            <br>
+            <ol>
+                <li>Use the tabs above to review submissions and provide feedback</li>
+                <li>Cast your vote as to which is better</li>
+                <li><em><strong>You have a limited amount of time to provide feedback and vote</strong></em></li> 
+            </ol>
+        </div>
+
+        <!-- review A pane -->
+        <div class="tab-pane" id="votepane2">
+            <div class="row-fluid">
+                <div class="span3">
+                    {{form.feedbackA.label}}
+                    {{form.feedbackA}}
+                </div>
+                <div class="span9">
+                    <object data="{{compA_link}}" type="application/pdf" width="100%" height="1000px">
+                      <p><a href="myfile.pdf">link to the PDF!</a></p>
+                    </object>
+                </div>
+            </div>
+        </div>
+
+        <!-- review B pane -->
+        <div class="tab-pane" id="votepane3">
+            <div class="row-fluid">
+                <div class="span3">
+                    {{form.feedbackB.label}}
+                    {{form.feedbackB}}
+                </div>
+                <div class="span9">
+                    <object data="{{compB_link}}" type="application/pdf" width="100%" height="1000px">
+                      <p><a href="myfile.pdf">link to the PDF!</a></p>
+                    </object>
+                </div>
+            </div>
+        </div>
+
+        <!-- voting pane -->
+        <div class="tab-pane" id="votepane4">
+            Select the one you think is better:
+            <br>
+            <br>
+            {{form.ballot.label}}
+            {{form.ballot}}
+            <br>
+            <input type="submit" value="Submit"/> 
+        </div>
+
+    </div>
+    <!-- end Tab panes -->
+</form>
 {% endif %} 
-
-
 
 {% endblock %}
 

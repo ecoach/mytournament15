@@ -159,10 +159,15 @@ def manage_bracket_view(request, **kwargs):
             name = edit_bracket_form.cleaned_data['name']
             print name
             bracket.name = name
+            prompt = edit_bracket_form.cleaned_data['prompt']
+            print prompt
+            bracket.prompt = prompt
             bracket.save()
             # take care of auto promotion
             trigger = edit_bracket_form.cleaned_data['trigger']
-            if trigger and bracket.status=='Active':
+            if trigger:
+                bracket.status='Active'
+                bracket.save()
                 ids = [rr.name for rr in Roster.objects.all()]
                 for cid in ids:
                     print cid
@@ -297,7 +302,7 @@ def info_view(request, **kwargs):
         return redirect(reverse('tourney:default'))
     return render(request, 'mytournament/info.html', {
         "main_nav": main_nav(request.user, 'student_view'),
-        "bracket": bracket.name 
+        "bracket": bracket
     })
 
 def pdf_register_view(request, **kwargs):
@@ -354,7 +359,7 @@ def register_view(request, **kwargs):
 
     return render(request, 'mytournament/register.html', {
         "main_nav": main_nav(request.user, 'student_view'),
-        "bracket": bracket.name,
+        "bracket": bracket,
         "form": form,
         'game': manager.Game(request.user)
     })
@@ -366,32 +371,44 @@ def vote_view(request, **kwargs):
         return redirect(reverse('tourney:default'))
     # load the manager
     manager = eval(bracket.manager)(bracket=bracket)
-   
+    # run manager setup
+    manager.Setup(request.user.username) 
     # handle the form
+    bout = manager.Get_Bout(request.user.username)
     if request.method == 'POST':
         form = Voter_Form(
             data=request.POST,
-            vote_choices = manager.Vote_Choices(who=request.user.username),
         )
         if form.is_valid():
-            bout = form.cleaned_data['bout']
-            decision = form.cleaned_data['vote']
-            manager.Record_Vote(bout, request.user.username, decision)
-    # run manager setup
-    manager.Setup(request.user.username) 
-    form = Voter_Form(
-        initial={
-            'bout': manager.Bout_Id(request.user.username)
-        },
-        vote_choices = manager.Vote_Choices(who=request.user.username)
-    )
+            if form.cleaned_data['ballot'] == 'A':
+                winner = bout.compA
+            else: 
+                winner = bout.compB
+            feedbackA = form.cleaned_data['feedbackA']
+            feedbackB = form.cleaned_data['feedbackB']
+            manager.Record_Vote(bout, request.user.username, winner, feedbackA, feedbackB)
+            manager.Setup(request.user.username) 
+            bout = manager.Get_Bout(request.user.username)
+            form = Voter_Form(instance=bout)
+    else:
+        form = Voter_Form(instance=bout)
+    try:
+        compA_link = HttpRequest.build_absolute_uri(request, bout.compA.Game_Url())
+        compB_link = HttpRequest.build_absolute_uri(request, bout.compB.Game_Url())
+        remaining = bout.judge.eligable - bout.judge.decisions
+    except:
+        compA_link = ''
+        compB_link = ''
+        remaining = ''
     return render(request, 'mytournament/vote.html', {
         "main_nav": main_nav(request.user, 'student_view'),
-        "bracket": bracket.name,
-        "form": form,
-        "judge": manager.Get_Judge(request.user.username),
+        "bracket": bracket,
         "status": manager.Status(request.user.username),
-        "winner": manager.GetWinner()
+        "competitors": manager.GetWinners(),
+        "compA_link": compA_link,
+        "compB_link": compB_link,
+        "remaining": remaining,
+        "form": form,
     })
 
 def get_bracket(bid):
