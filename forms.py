@@ -6,13 +6,29 @@ from .models import *
 class Register_Form(forms.Form):
     game = forms.CharField(required=False, widget=forms.Textarea(attrs={'placeholder':"Paste your game...", 'class':'input-xxlarge'}))
 
-class Voter_Form(forms.Form):
-    vote = forms.ChoiceField(widget=forms.RadioSelect, choices=(('0', 'Test run',), ('1', 'Commit',)), initial=0)
-    bout = forms.IntegerField(widget=forms.HiddenInput())
+BALLOT_CHOICES = (('A', 'Vote for A',), ('B', 'Vote for B',))
+class Voter_Form(forms.ModelForm):
+    ballot = forms.ChoiceField(required=False, label='', widget=forms.RadioSelect(), choices=BALLOT_CHOICES)
 
-    def __init__(self, vote_choices, *args, **kwargs):
+    class Meta:
+        model = Bout
+        fields = ['feedbackA', 'feedbackB']
+
+        widgets = {
+            'feedbackA': forms.Textarea(attrs={'placeholder':"See feedback instructions...", 'rows':20}),
+            'feedbackB': forms.Textarea(attrs={'placeholder':"See feedback instructions...", 'rows':20}),
+        }
+
+    def clean_ballot(self):
+        ballot = self.cleaned_data['ballot']
+        if len(ballot) == 0:
+            raise forms.ValidationError(self.fields['ballot'].error_messages['invalid'])
+        return ballot
+
+    def __init__(self, *args, **kwargs):
         super(Voter_Form, self).__init__(*args, **kwargs)
-        self.fields['vote'].choices = vote_choices 
+        self.fields['feedbackA'].label = 'Feedback on A:'
+        self.fields['feedbackB'].label = 'Feedback on B:'
 
 # management forms
 
@@ -29,11 +45,22 @@ class Select_Bracket_Form(forms.Form):
     bracket = forms.ModelChoiceField(required=True, label='Select a Bracket', queryset=Bracket.objects.all().order_by('-id'), widget=forms.Select(attrs={'onchange': "$('#theform').submit();"}))
 
 class Edit_Bracket_Form(forms.ModelForm):
-    trigger = forms.MultipleChoiceField(required=False, widget=forms.CheckboxSelectMultiple(attrs={'checked' : 'checked'}), choices=(('trigger', "Promote everyone on roster to competing and judging while activating tournament"),))
+    trigger = forms.MultipleChoiceField(required=False, label='One click activation', widget=forms.CheckboxSelectMultiple(attrs={}), choices=(('trigger', "Activate bracket for voting and promote everyone on roster to competing and judging"),))
 
     class Meta:
         model = Bracket
-        fields = ['status', 'name']
+        fields = ['name', 'prompt', 'status']
+
+        widgets = {
+            'prompt': forms.Textarea(attrs={'placeholder':"Voting instructions...", 'class':'input-xxlarge'}),
+        }
+    """
+    def __init__(self, *args, **kwargs):
+        super(Edit_Bracket_Form, self).__init__(*args, **kwargs)
+        self.fields['prompt'].label = ':'
+    """
+
+
 
 class Pdf_Register_Form(forms.Form):
     game_file = forms.FileField(label='Upload a pdf file', required=True)

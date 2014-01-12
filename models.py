@@ -38,6 +38,7 @@ class Bracket(models.Model):
     # [12m_Judge]
     # [12m_Bout]
     name = models.CharField(max_length=100)
+    prompt = models.TextField(null=True, blank=True)
     manager = models.CharField(max_length=30, choices=MANAGER_CHOICES)
     status = models.CharField(default='Open', max_length=30, choices=BRACKET_STATE_CHOICES)
 
@@ -79,10 +80,13 @@ class Competitor(models.Model):
         self.status = 'Competing'
         self.save()
 
-    def Game_Link(self):
+    def Game_Url(self):
         import time
         tt = str(time.time())
-        link = "<a href='" + reverse('tourney:tourney_pdf', kwargs={'path': self.game}) + "?"+tt+"' class='data-log-external' target='_blank'>" + self.game + "</a>"
+        return reverse('tourney:tourney_pdf', kwargs={'path': self.game}) + "?"+tt
+
+    def Game_Link(self):
+        link = "<a href='" + self.Game_Url() +"' class='data-log-external' target='_blank'>" + self.game + "</a>"
         return link 
 
     def Get_Beatby(self):
@@ -127,8 +131,10 @@ class Judge(models.Model):
     # [12m_Bout]
     bracket = models.ForeignKey(Bracket)
     name = models.CharField(max_length=30, null=True, blank=True)
-    eligable = models.IntegerField(null=True, blank=True)
-    decisions = models.IntegerField(null=True, blank=True)
+    eligable = models.IntegerField(default=0)
+    decisions = models.IntegerField(default=0)
+    skips = models.IntegerField(default=0)
+    rating = models.IntegerField(null=True, blank=True)
 
 class Bout(models.Model):
     class Meta: 
@@ -138,6 +144,8 @@ class Bout(models.Model):
     judge = models.ForeignKey(Judge, null=True)
     compA = models.ForeignKey(Competitor, related_name='compA')
     compB = models.ForeignKey(Competitor, related_name='compB')
+    feedbackA = models.TextField(null=True, blank=True)
+    feedbackB = models.TextField(null=True, blank=True)
     winner = models.ForeignKey(Competitor, related_name='winner', null=True)
     btime = models.DateTimeField(null=True, blank=True)
 
@@ -223,7 +231,7 @@ class Base_Tourney(object):
             tnow = datetime.utcnow()
             tthen = bb.btime
             del_minutes = (tnow.replace(tzinfo=None) - tthen.replace(tzinfo=None)).seconds / 60
-            if del_minutes >= 15:
+            if del_minutes >= 20:
                 bb.judge = None
                 bb.btime = None
                 bb.save()
@@ -270,7 +278,7 @@ class Base_Tourney(object):
         else:
             return "MESSAGE_WINNER"
 
-    def GetWinner(self):
+    def GetWinners(self):
         # this should maybe print the ordering results...
         comps = self.bracket.competitor_set.filter(status='Competing').extra(select={'rank': 'wins - losses'}).order_by('-rank')
         winners = []
@@ -310,6 +318,12 @@ class Base_Tourney(object):
             return False
         return True
         pass
+
+    def Get_Bout(self, who):
+        bout = self.Bout_Assignment(who)
+        if not bout:
+            return None
+        return bout
 
     def Vote_Choices(self, who):
         import time
@@ -357,13 +371,9 @@ class Base_Tourney(object):
             return 0
         return bout.id
 
-    def Record_Vote(self, bout_id, who, game):
-        try:
-            # make sure the vote is still assigned to them, may have timed out!
-            bout = Bout.objects.get(id=bout_id)
-            winner = Competitor.objects.get(bracket=self.bracket, game=game)
-            judge = Judge.objects.get(bracket=self.bracket, name=who)
-        except: 
+    def Record_Vote(self, bout, judgename, winner, feedbackA, feedbackB):
+        judge = bout.judge
+        if judge.name != judgename:
             # must have timed out!
             return
         if winner == bout.compA:
@@ -379,8 +389,10 @@ class Base_Tourney(object):
         winner.wins += 1 
         winner.Add_Beat(looser.name)
         winner.save()
-        # record the bout winner
+        # record the bout winner and feedback
         bout.winner = winner
+        bout.feedbackA = feedbackA
+        bout.feedbackB = feedbackB
         bout.save()
 
 class Single_Elimination(Base_Tourney):
