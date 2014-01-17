@@ -60,12 +60,14 @@
             <th>Wins</th>
             <th>Losses</th>
             <th>Game</th>
+            <th>Comments</th>
         </tr>
         {% for ww in competitors %}
             <tr>
                 <td>{{ww.0}}</td>
                 <td>{{ww.1}}</td>
                 <td>{{ww.2|safe}}</td>
+                <td>{{ww.3|safe}}</td>
             </tr>
         {% endfor %}
     </table>

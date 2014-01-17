@@ -343,6 +343,20 @@ def pdf_register_view(request, **kwargs):
         'competitor': manager.GetCompetitor(request.user)
     })
 
+def competitor_comments_view(request, **kwargs):
+    bid = kwargs["bracket"]
+    bracket = get_bracket(bid)
+    if bracket == None:
+        return redirect(reverse('tourney:default'))
+    comp = Competitor.objects.get_or_create(id=kwargs['competitor'])
+    if comp[1]:
+        return redirect(reverse('tourney:default'))
+    return render(request, 'mytournament/competitor_comments.html', {
+        "main_nav": main_nav(request.user, 'student_view'),
+        "bracket": bracket,
+        'comments': comp[0].Get_Comments()
+    })
+
 def register_view(request, **kwargs):
     bid = kwargs["bracket"]
     bracket = get_bracket(bid)

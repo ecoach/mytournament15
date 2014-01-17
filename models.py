@@ -96,6 +96,25 @@ class Competitor(models.Model):
         tt = str(time.time())
         return reverse('tourney:tourney_pdf', kwargs={'path': self.game}) + "?"+tt
 
+    def Get_Comments(self):
+        comments = []
+        for bb in self.compA.select_related():
+            if bb.feedbackA != None and len(bb.feedbackA) > 0:
+                comments.append(bb.feedbackA)
+        for bb in self.compB.select_related():
+            if bb.feedbackB != None and len(bb.feedbackB) > 0:
+                comments.append(bb.feedbackB)
+        return comments
+
+    def Feedback_Link(self):
+        comments = self.Get_Comments()
+        link_text = ""
+        if len(comments) > 0:
+            link_text = "comments: " + str(len(comments))
+        feedback_url = reverse('tourney:bracket:competitor_feedback', kwargs={'competitor': self.id, 'bracket':self.bracket.id})
+        link = "<a href='" + feedback_url +"' class='data-log-external' target='_blank'>"+link_text+"</a>"
+        return link 
+
     def Game_Link(self):
         link = "<a href='" + self.Game_Url() +"' class='data-log-external' target='_blank'>" + self.game + "</a>"
         return link 
@@ -297,7 +316,8 @@ class Base_Tourney(object):
         comps = self.bracket.competitor_set.filter(status='Competing').extra(select={'rank': 'wins - losses'}).order_by('-rank')
         winners = []
         for cc in comps:
-            winners.append([cc.wins, cc.losses, cc.Game_Link]) 
+            #cc.compB.select_related()[3].feedbackA
+            winners.append([cc.wins, cc.losses, cc.Game_Link(), cc.Feedback_Link()]) 
         return winners
 
     def Status_Participating(self, who):

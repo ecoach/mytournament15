@@ -1,0 +1,15 @@
+{% extends 'mytournament/base_tournament.html' %}
+
+{% block bottom %}
+    Comments received were:
+    <br>
+    <br>
+    <ul>
+    {% for cc in comments %}
+        <li>{{cc}}</li>
+    {% endfor %}
+    </ul>
+{% endblock %}
+
+
+
