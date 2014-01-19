@@ -1,6 +1,6 @@
 {% extends 'mytournament/base_tournament.html' %}
 
-{% block head_extra2 %}
+{% block ready_extra2 %}
     $('#voteTabs a').click(function (e) {
         e.preventDefault()
         $(this).tab('show')
@@ -10,6 +10,13 @@
 {% block bottom %}
 
 {% if status == 'MESSAGE_NON_PART' %}  
+
+<script type="text/javascript">
+    jQuery(document).ready(function($) {
+        logger.page_dynamics('voting_page', 'msg_non_part')
+    });
+</script>
+
     One of the following is true:
     <br>
     <br>
@@ -26,6 +33,13 @@
 {% endif %} 
 
 {% if status == 'MESSAGE_WAIT' %}  
+
+<script type="text/javascript">
+    jQuery(document).ready(function($) {
+        logger.page_dynamics('voting_page', 'msg_wait')
+    });
+</script>
+
     Hold your horses! (stop back in 15-20 minutes)
     <br>
     <br>
@@ -48,10 +62,24 @@
 {% endif %} 
 
 {% if status == 'MESSAGE_THANKS' %}  
+
+<script type="text/javascript">
+    jQuery(document).ready(function($) {
+        logger.page_dynamics('voting_page', 'msg_thanks')
+    });
+</script>
+
     Thanks for voting, you will find the winner at this same link as soon as the last vote is cast.
 {% endif %} 
 
 {% if status == 'MESSAGE_WINNER' %}  
+
+<script type="text/javascript">
+    jQuery(document).ready(function($) {
+        logger.page_dynamics('voting_page', 'winners')
+    });
+</script>
+
     <strong>This tournament is now finished, results are below.</strong>
     <br>
     <br>
@@ -74,21 +102,28 @@
 {% endif %} 
 
 {% if status == 'MESSAGE_VOTE' %}  
+
+<script type="text/javascript">
+    jQuery(document).ready(function($) {
+        logger.page_dynamics('voting_page', 'auto step1')
+    });
+</script>
+
 <form id='theform' action="{% url 'tourney:bracket:vote' bracket=bracket.id %}" method="post">{% csrf_token %}
 
     <!-- Nav tabs -->
     <ul id="voteTabs" class="nav nav-tabs">
         <li class="active">
-            <a href='#votepane1'>Step 1: Instructions</a>
+            <a href='#votepane1' onclick="logger.page_dynamics('voting_page', 'step1');">Step 1: Instructions</a>
         </li>
         <li class="">
-            <a href='#votepane2'>Step 2: Review A</a>
+            <a href='#votepane2' onclick="logger.page_dynamics('voting_page', 'step2');">Step 2: Review A</a>
         </li>
         <li class="">
-            <a href='#votepane3'>Step 3: Review B</a>
+            <a href='#votepane3' onclick="logger.page_dynamics('voting_page', 'step3');">Step 3: Review B</a>
         </li>
         <li class="">
-            <a href='#votepane4'>Step 4: Cast Vote</a>
+            <a href='#votepane4' onclick="logger.page_dynamics('voting_page', 'step4');">Step 4: Cast Vote</a>
         </li>
     </ul>
 
@@ -165,7 +200,7 @@
             {{form.ballot.label}}
             {{form.ballot}}
             <br>
-            <input type="submit" value="Submit"/> 
+            <input type="submit" value="Submit" onclick="logger.page_dynamics('voting_page', 'submit');"/> 
         </div>
 
     </div>

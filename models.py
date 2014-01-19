@@ -96,6 +96,9 @@ class Competitor(models.Model):
         tt = str(time.time())
         return reverse('tourney:tourney_pdf', kwargs={'path': self.game}) + "?"+tt
 
+    def Feedback_Url(self):
+        return reverse('tourney:bracket:competitor_feedback', kwargs={'competitor': self.id, 'bracket':self.bracket.id})
+
     def Get_Comments(self):
         comments = []
         for bb in self.compA.select_related():
@@ -105,19 +108,6 @@ class Competitor(models.Model):
             if bb.feedbackB != None and len(bb.feedbackB) > 0:
                 comments.append(bb.feedbackB)
         return comments
-
-    def Feedback_Link(self):
-        comments = self.Get_Comments()
-        link_text = ""
-        if len(comments) > 0:
-            link_text = "comments: " + str(len(comments))
-        feedback_url = reverse('tourney:bracket:competitor_feedback', kwargs={'competitor': self.id, 'bracket':self.bracket.id})
-        link = "<a href='" + feedback_url +"' class='data-log-external' target='_blank'>"+link_text+"</a>"
-        return link 
-
-    def Game_Link(self):
-        link = "<a href='" + self.Game_Url() +"' class='data-log-external' target='_blank'>" + self.game + "</a>"
-        return link 
 
     def Get_Beatby(self):
         try: 
@@ -317,7 +307,9 @@ class Base_Tourney(object):
         winners = []
         for cc in comps:
             #cc.compB.select_related()[3].feedbackA
-            winners.append([cc.wins, cc.losses, cc.Game_Link(), cc.Feedback_Link()]) 
+            game_link = "<a href='" + cc.Game_Url() +"' onclick=\"logger.page_dynamics('winners_pdf', '"+cc.game+"');\" target='_blank'>" + cc.game + "</a>"
+            feedback_link = "<a href='" + cc.Feedback_Url() +"'>comments: "+str(len(cc.Get_Comments()))+"</a>"
+            winners.append([cc.wins, cc.losses, game_link, feedback_link]) 
         return winners
 
     def Status_Participating(self, who):

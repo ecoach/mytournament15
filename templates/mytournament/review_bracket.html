@@ -16,7 +16,7 @@
                 {% for vv in comps %}
                     <tr>
                         <td>{{vv.name}}</td>
-                        <td>{{vv.Game_Link|safe}}</td>
+                        <td><a href="{{vv.Game_Url}}" onclick="logger.page_dynamics('rev_bracket_pdf', '{{vv.game}}');" target="_blank">{{vv.game}}</a></td>
                         <td>{{vv.wins}}</td>
                         <td>{{vv.losses}}</td>
                         <td>{{vv.byes}}</td>

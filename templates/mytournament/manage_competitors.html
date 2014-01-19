@@ -22,7 +22,7 @@
                 <tr><th>submission</th><th>status</th><th>who</th></tr>
                 {% for form in compformset.forms %}
                     <tr>
-                        <td>{{form.id}}{{form.instance.Game_Link|safe}}</td>
+                        <td>{{form.id}}<a href="{{form.instance.Game_Url}}" onclick="logger.page_dynamics('man_comps_pdf', '{{form.instance.game}}');" target="_blank">{{form.instance.game}}</a></td>
                         <td>{{form.status}}</td>
                         <td>{{form.comp_name}}</td>
                     </tr>

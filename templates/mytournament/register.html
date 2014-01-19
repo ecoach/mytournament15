@@ -55,7 +55,7 @@
     <br>
     <form action="." method="post" enctype="multipart/form-data">{% csrf_token %}
         {{form.as_p}}
-        <input type='submit' value='Submit Game'></input>
+        <input type='submit' value='Submit Game' onclick="logger.page_dynamics('register_page', 'submit');"></input>
     </form>
 {% else %}
     Registration is no longer open...
@@ -63,7 +63,7 @@
     <br>
 {% endif %}
 
-    Your upload : <a href='{% url 'tourney:tourney_pdf' path=competitor.game %}?{% now "U" %}'>{{competitor.game|safe}}</a>
+    Your upload : <a href='{{competitor.Game_Url}}' onclick="logger.page_dynamics('registration_pdf', '{{competitor.game}}');" target="_blank">{{competitor.game}}</a>
 
 
 {% endblock %}
