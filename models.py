@@ -66,6 +66,47 @@ class Bracket(models.Model):
     def num_judges(self):
         return len(Judge.objects.filter(bracket=self))
 
+    def clone(self, instructions):
+        # example dictionary of instructions:
+        #   instructions = {
+        #       keyX: valX,
+        #       keyY: valY,
+        #       12M_objX: {'keyX': valX, ...}
+        #       12M_objY: {'keyX': valX, ...}
+        #   } 
+        # 
+        # things i might want to do for normal fields
+        # *copy original  <key missing>
+        # *specify new <key has value>
+        # 
+        # things i might want to do for foreign key fields
+        # *copy original <key missing> 
+        # *specify new <key value is dictionary>
+        #
+        # pseudo code...
+        # create instance
+        # set instance pk to null
+        # save clone so it has a pk
+        # loop over instructions
+        #   if instruction is dictionary
+        #       look for related objects and call clone passing dictionary and pk
+        #       HACK-ALERT this ignores 1:1 fields
+        #   elif field exists
+        #       set field to value
+        # save clone again
+        # return pk
+
+        """
+        foo._meta.get_field_by_name('feedback_option')
+        if hasattr(form, 'cleaned_data'):
+        """
+
+        pass
+
+    def clone(self):
+      new_kwargs = dict([(fld.name, getattr(old, fld.name)) for fld in old._meta.fields if fld.name != old._meta.pk]);
+      return self.__class__.objects.create(**new_kwargs)
+
 COMP_STATUS_CHOICES = (
     ('Registered', 'Registered'),
     ('Competing', 'Competing'),
