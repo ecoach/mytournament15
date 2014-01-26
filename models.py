@@ -308,7 +308,11 @@ class Base_Tourney(object):
         for cc in comps:
             #cc.compB.select_related()[3].feedbackA
             game_link = "<a href='" + cc.Game_Url() +"' onclick=\"logger.page_dynamics('winners_pdf', '"+cc.game+"');\" target='_blank'>" + cc.game + "</a>"
-            feedback_link = "<a href='" + cc.Feedback_Url() +"'>comments: "+str(len(cc.Get_Comments()))+"</a>"
+            comments = cc.Get_Comments()
+            if len(comments) > 0:
+                feedback_link = "<a href='" + cc.Feedback_Url() +"'>comments: "+str(len(comments))+"</a>"
+            else:
+                feedback_link = ''
             winners.append([cc.wins, cc.losses, game_link, feedback_link]) 
         return winners
 
