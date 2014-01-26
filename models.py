@@ -66,15 +66,24 @@ class Bracket(models.Model):
     def num_judges(self):
         return len(Judge.objects.filter(bracket=self))
 
-    def clone(self, instructions):
+    def clone(self, {pk_instructions}, {fk_instructions}):
+        #    
         # example dictionary of instructions:
-        #   instructions = {
+        #   pk_instructions = {
         #       keyX: valX,
         #       keyY: valY,
+        #       ...
+        #   } 
+        #   fk_instructions = {
         #       12M_objX: {'keyX': valX, ...}
         #       12M_objY: {'keyX': valX, ...}
+        #       ...
         #   } 
-        # 
+        #    
+        # *this method percludes preserving fk relationships 
+        # *note default behavior for pk is to preserve attributes of unspecified
+        # *note default behavior for fk is to drop relationship of unspecified
+        #    
         # things i might want to do for normal fields
         # *copy original  <key missing>
         # *specify new <key has value>
@@ -84,12 +93,18 @@ class Bracket(models.Model):
         # *specify new <key value is dictionary>
         #
         # pseudo code...
-        # create instance
-        # set instance pk to null
-        # save clone so it has a pk
+        # get instance
+        # find related fk objects
+        # set instance pk to null and save clone to get new pk
+        # loop over fk objects
+        #   loop over fk_instructions (if there's an instruction clone it)
+        #       pass instructions to clone
+        #       set fk association between clones
+        #       save both objects
         # loop over instructions
         #   if instruction is dictionary
-        #       look for related objects and call clone passing dictionary and pk
+        #       look for related objects and call clone passing dictionary
+        #       set fk of new cloned object
         #       HACK-ALERT this ignores 1:1 fields
         #   elif field exists
         #       set field to value
