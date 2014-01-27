@@ -391,6 +391,33 @@ def vote_view(request, **kwargs):
     bracket = get_bracket(bid)
     if bracket == None:
         return redirect(reverse('tourney:default'))
+    """
+    bracket.clone(
+        pk_instructions={
+            'status': 'Active'
+        },
+        fk_instructions={
+            'competitor':{
+                'pk_instructions':{
+                    'beat': None,
+                    'beatby': None,
+                    'wins': 0,
+                    'losses': 0,
+                    'draws': 0,
+                    'byes': 0,
+                    'points': 0,
+                    #'status': 'Competing',
+                },
+                'fk_instructions':{}
+            },
+            'judge':{
+                'pk_instructions':{
+                },
+                'fk_instructions':{}
+            }
+        }
+    )
+    """
     # load the manager
     manager = eval(bracket.manager)(bracket=bracket)
     # run manager setup

@@ -9,6 +9,53 @@ import numpy as np
 
 # Create your models here.
 
+class Clonable(object):
+
+    def __init__(self):
+        pass
+
+    #def clone(self, pk_instructions={}, fk_instructions={fk_class: {pk_instructions}, ...}):
+    def clone(self, pk_instructions={}, fk_instructions={}):
+        """
+        # example dictionary of instructions:
+        pk_instructions = {
+            # preserves unspecified attributes
+            # overwrites specified attributes
+            fieldX: valueX,
+            ...
+        } 
+        fk_instructions = {
+            # drops unspecified fk objects
+            # clones specified fk objects
+            fk_key: {pk_instructions, fk_instructions}
+            ...
+        } 
+        """
+        # find list of related fk objects
+        fk_objs = dict()
+        for fk_field in fk_instructions.keys():
+            fk_objs[fk_field] = eval('self.'+fk_field+'_set.select_related()')
+        # create new instance of pk, modify fields and save clone
+        self.id = None
+        for pk_field in pk_instructions.keys():
+            if hasattr(self, pk_field):
+                setattr(self, pk_field, pk_instructions[pk_field])
+        self.save()
+        # for any fk objects with clone instructions, recurse
+        for fk_set in fk_objs:
+            if fk_set in fk_instructions.keys():
+                for fk_obj in fk_objs[fk_set]: 
+                    fk_obj.clone(
+                        pk_instructions=fk_instructions[fk_set]['pk_instructions'],
+                        fk_instructions=fk_instructions[fk_set]['fk_instructions']
+                    )
+        return
+
+COMP_STATUS_CHOICES = (
+    ('Registered', 'Registered'),
+    ('Competing', 'Competing'),
+)
+
 ROSTER_STATUS_CHOICES = (
     ('Enrolled', 'Enrolled'),
 )
@@ -41,7 +88,7 @@ FEEDBACK_CHOICES = (
     ('Optional', 'Optional'),
 )
 
-class Bracket(models.Model):
+class Bracket(models.Model, Clonable):
     class Meta: 
         db_table = 'mytournament_bracket'
     # [12m_Competitor]
@@ -66,68 +113,8 @@ class Bracket(models.Model):
     def num_judges(self):
         return len(Judge.objects.filter(bracket=self))
 
-    def clone(self, {pk_instructions}, {fk_instructions}):
-        #    
-        # example dictionary of instructions:
-        #   pk_instructions = {
-        #       keyX: valX,
-        #       keyY: valY,
-        #       ...
-        #   } 
-        #   fk_instructions = {
-        #       12M_objX: {'keyX': valX, ...}
-        #       12M_objY: {'keyX': valX, ...}
-        #       ...
-        #   } 
-        #    
-        # *this method percludes preserving fk relationships 
-        # *note default behavior for pk is to preserve attributes of unspecified
-        # *note default behavior for fk is to drop relationship of unspecified
-        #    
-        # things i might want to do for normal fields
-        # *copy original  <key missing>
-        # *specify new <key has value>
-        # 
-        # things i might want to do for foreign key fields
-        # *copy original <key missing> 
-        # *specify new <key value is dictionary>
-        #
-        # pseudo code...
-        # get instance
-        # find related fk objects
-        # set instance pk to null and save clone to get new pk
-        # loop over fk objects
-        #   loop over fk_instructions (if there's an instruction clone it)
-        #       pass instructions to clone
-        #       set fk association between clones
-        #       save both objects
-        # loop over instructions
-        #   if instruction is dictionary
-        #       look for related objects and call clone passing dictionary
-        #       set fk of new cloned object
-        #       HACK-ALERT this ignores 1:1 fields
-        #   elif field exists
-        #       set field to value
-        # save clone again
-        # return pk
 
-        """
-        foo._meta.get_field_by_name('feedback_option')
-        if hasattr(form, 'cleaned_data'):
-        """
-
-        pass
-
-    def clone(self):
-      new_kwargs = dict([(fld.name, getattr(old, fld.name)) for fld in old._meta.fields if fld.name != old._meta.pk]);
-      return self.__class__.objects.create(**new_kwargs)
-
-COMP_STATUS_CHOICES = (
-    ('Registered', 'Registered'),
-    ('Competing', 'Competing'),
-)
-
-class Competitor(models.Model):
+class Competitor(models.Model, Clonable):
     class Meta: 
         db_table = 'mytournament_competitor'
     # [12m_Bout]
@@ -201,7 +188,7 @@ class Competitor(models.Model):
         beatby.append(who)
         self.Set_Beatby(beatby)
     
-class Judge(models.Model):
+class Judge(models.Model, Clonable):
     class Meta: 
         db_table = 'mytournament_judge'
     # [12m_Bout]
@@ -212,7 +199,7 @@ class Judge(models.Model):
     skips = models.IntegerField(default=0)
     rating = models.IntegerField(null=True, blank=True)
 
-class Bout(models.Model):
+class Bout(models.Model, Clonable):
     class Meta: 
         db_table = 'mytournament_bout'
     bracket = models.ForeignKey(Bracket)
