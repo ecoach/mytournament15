@@ -14,7 +14,6 @@ class Clonable(object):
     def __init__(self):
         pass
 
-    #def clone(self, pk_instructions={}, fk_instructions={fk_class: {pk_instructions}, ...}):
     def clone(self, pk_instructions={}, fk_instructions={}):
         """
         # example dictionary of instructions:
@@ -40,7 +39,7 @@ class Clonable(object):
         for pk_field in pk_instructions.keys():
             if hasattr(self, pk_field):
                 setattr(self, pk_field, pk_instructions[pk_field])
-        self.save()
+        self.save() # auto associates the new fk reference for all fk_objs!
         # for any fk objects with clone instructions, recurse
         for fk_set in fk_objs:
             if fk_set in fk_instructions.keys():
@@ -49,7 +48,7 @@ class Clonable(object):
                         pk_instructions=fk_instructions[fk_set]['pk_instructions'],
                         fk_instructions=fk_instructions[fk_set]['fk_instructions']
                     )
-        return
+        return self.id
 
 COMP_STATUS_CHOICES = (
     ('Registered', 'Registered'),

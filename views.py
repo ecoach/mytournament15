@@ -154,6 +154,34 @@ def manage_bracket_view(request, **kwargs):
         return redirect(reverse('tourney:choose_bracket'))
     # load the manager
     manager = eval(bracket.manager)(bracket=bracket)
+    """
+    bracket.clone(
+        pk_instructions={
+            'status': 'Active'
+        },
+        fk_instructions={
+            'competitor':{
+                'pk_instructions':{
+                    'beat': None,
+                    'beatby': None,
+                    'wins': 0,
+                    'losses': 0,
+                    'draws': 0,
+                    'byes': 0,
+                    'points': 0,
+                    #'status': 'Competing',
+                },
+                'fk_instructions':{}
+            },
+            'judge':{
+                'pk_instructions':{
+                    'decisions': 0,
+                },
+                'fk_instructions':{}
+            }
+        }
+    )
+    """
     if request.method == 'POST':
         edit_bracket_form = Edit_Bracket_Form(data=request.POST)
         if edit_bracket_form.is_valid():
@@ -391,33 +419,7 @@ def vote_view(request, **kwargs):
     bracket = get_bracket(bid)
     if bracket == None:
         return redirect(reverse('tourney:default'))
-    """
-    bracket.clone(
-        pk_instructions={
-            'status': 'Active'
-        },
-        fk_instructions={
-            'competitor':{
-                'pk_instructions':{
-                    'beat': None,
-                    'beatby': None,
-                    'wins': 0,
-                    'losses': 0,
-                    'draws': 0,
-                    'byes': 0,
-                    'points': 0,
-                    #'status': 'Competing',
-                },
-                'fk_instructions':{}
-            },
-            'judge':{
-                'pk_instructions':{
-                },
-                'fk_instructions':{}
-            }
-        }
-    )
-    """
+    print len(Bout.objects.all())
     # load the manager
     manager = eval(bracket.manager)(bracket=bracket)
     # run manager setup
