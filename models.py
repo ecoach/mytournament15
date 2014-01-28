@@ -14,41 +14,40 @@ class Clonable(object):
     def __init__(self):
         pass
 
-    def clone(self, pk_instructions={}, fk_instructions={}):
+    def clone(self, instructions={'pk_instructions':{}, 'fk_instructions':{}}):
         """
         # example dictionary of instructions:
-        pk_instructions = {
-            # preserves unspecified attributes
-            # overwrites specified attributes
-            fieldX: valueX,
-            ...
-        } 
-        fk_instructions = {
-            # drops unspecified fk objects
-            # clones specified fk objects
-            fk_key: {pk_instructions, fk_instructions}
-            ...
-        } 
+        instructions = {
+            pk_instructions: {
+                # preserves unspecified attributes
+                # overwrites specified attributes
+                fieldX: valueX,
+                ...
+            },
+            fk_instructions: {
+                # drops unspecified fk objects
+                # clones specified fk objects
+                fk_key: {pk_instructions, fk_instructions}
+                ...
+            } 
+        }
         """
         # find list of related fk objects
         fk_objs = dict()
-        for fk_field in fk_instructions.keys():
+        for fk_field in instructions['fk_instructions'].keys():
             fk_objs[fk_field] = eval('self.'+fk_field+'_set.select_related()')
         # create new instance of pk, modify fields and save clone
         self.id = None
-        for pk_field in pk_instructions.keys():
+        for pk_field in instructions['pk_instructions'].keys():
             if hasattr(self, pk_field):
-                setattr(self, pk_field, pk_instructions[pk_field])
+                setattr(self, pk_field, instructions['pk_instructions'][pk_field])
         self.save() # auto associates the new fk reference for all fk_objs!
         # for any fk objects with clone instructions, recurse
         for fk_set in fk_objs:
-            if fk_set in fk_instructions.keys():
+            if fk_set in instructions['fk_instructions'].keys():
                 for fk_obj in fk_objs[fk_set]: 
-                    fk_obj.clone(
-                        pk_instructions=fk_instructions[fk_set]['pk_instructions'],
-                        fk_instructions=fk_instructions[fk_set]['fk_instructions']
-                    )
-        return self.id
+                    fk_obj.clone(instructions['fk_instructions'][fk_set])
+        return self
 
 COMP_STATUS_CHOICES = (
     ('Registered', 'Registered'),

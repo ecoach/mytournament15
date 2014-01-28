@@ -59,6 +59,41 @@ class New_Bracket_Form(forms.ModelForm):
 class Select_Bracket_Form(forms.Form):
     bracket = forms.ModelChoiceField(required=True, label='Select a Bracket', queryset=Bracket.objects.all().order_by('-id'), widget=forms.Select(attrs={'onchange': "$('#theform').submit();"}))
 
+class Clone_Bracket_Form(forms.Form):
+    triggers_bracket = forms.ChoiceField(
+        required=True, 
+        label='Bracket', 
+        widget=forms.RadioSelect(attrs={}), 
+        choices=(
+            ('Open', "Clone bracket setting status to 'Open'"),
+            ('Active', "Clone bracket setting status to 'Active'"),
+        ),
+        initial='Active',
+        error_messages={'required': 'You must clone the bracket somehow'}
+    )
+    triggers_judges = forms.ChoiceField(
+        required=True, 
+        label='Judges', 
+        widget=forms.RadioSelect(attrs={}), 
+        choices=(
+            ('without', "Clone without judges"),
+            ('with', "Clone with judges setting decisions to zero"),
+        ),
+        initial='with',
+        error_messages={'required': 'You must decide what to do about judges'}
+    )
+    triggers_competitors = forms.ChoiceField(
+        required=True, 
+        label='Competitors', 
+        widget=forms.RadioSelect(attrs={}), 
+        choices=(
+            ('without', "Clone without competitors"),
+            ('with', "Clone with competitors setting wins, losses, etc to zero"),
+        ),
+        initial='with',
+        error_messages={'required': 'You must decide what to do about competitors'}
+    )
+
 class Edit_Bracket_Form(forms.ModelForm):
     trigger = forms.MultipleChoiceField(required=False, label='One click activation', widget=forms.CheckboxSelectMultiple(attrs={}), choices=(('trigger', "If you have loaded a 'Roster' (tabs above) then you can activate bracket for voting and promote everyone on the roster to competing and judging"),))
 

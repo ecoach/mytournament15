@@ -1,0 +1,30 @@
+{% extends 'staff_page.html' %}
+
+{% block content %}
+    <div class='row-fluid'>
+        <div class='span12'>
+            <br>
+            bracket:<strong> {{bracket.name}} </strong>
+            <br>
+            <hr>
+            <form id='the_form' action="{% url 'tourney:bracket:clone_bracket' bracket=bracket.id %}" method="post">{% csrf_token %}
+            {{ clone_bracket_form.triggers_bracket.label }}
+            <font color='red'>{{ clone_bracket_form.triggers_bracket.errors }}</font>
+            {{ clone_bracket_form.triggers_bracket }}
+            {{ clone_bracket_form.triggers_competitors.label }}
+            <font color='red'>{{ clone_bracket_form.triggers_competitors.errors }}</font>
+            {{ clone_bracket_form.triggers_competitors }}
+            {{ clone_bracket_form.triggers_judges.label }}
+            <font color='red'>{{ clone_bracket_form.triggers_judges.errors }}</font>
+            {{ clone_bracket_form.triggers_judges }}
+            <br>
+            <input type="submit" value="Submit"/> 
+            </form>
+
+
+        </div>
+    </div>
+{% endblock %}
+
+
+

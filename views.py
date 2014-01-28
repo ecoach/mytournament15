@@ -154,34 +154,6 @@ def manage_bracket_view(request, **kwargs):
         return redirect(reverse('tourney:choose_bracket'))
     # load the manager
     manager = eval(bracket.manager)(bracket=bracket)
-    """
-    bracket.clone(
-        pk_instructions={
-            'status': 'Active'
-        },
-        fk_instructions={
-            'competitor':{
-                'pk_instructions':{
-                    'beat': None,
-                    'beatby': None,
-                    'wins': 0,
-                    'losses': 0,
-                    'draws': 0,
-                    'byes': 0,
-                    'points': 0,
-                    #'status': 'Competing',
-                },
-                'fk_instructions':{}
-            },
-            'judge':{
-                'pk_instructions':{
-                    'decisions': 0,
-                },
-                'fk_instructions':{}
-            }
-        }
-    )
-    """
     if request.method == 'POST':
         edit_bracket_form = Edit_Bracket_Form(data=request.POST)
         if edit_bracket_form.is_valid():
@@ -228,6 +200,68 @@ def manage_bracket_view(request, **kwargs):
         "registration_link": HttpRequest.build_absolute_uri(request, reverse('tourney:bracket:register', kwargs={'bracket': bracket.id})),
         "voting_link": HttpRequest.build_absolute_uri(request, reverse('tourney:bracket:vote', kwargs={'bracket': bracket.id})),
         'edit_bracket_form': edit_bracket_form,
+    })
+
+@staff_member_required
+def clone_bracket_view(request, **kwargs):
+    bid = kwargs["bracket"]
+    bracket = get_bracket(bid)
+    if bracket == None:
+        return redirect(reverse('tourney:choose_bracket'))
+    # load the manager
+    original_id = bracket.id
+    manager = eval(bracket.manager)(bracket=bracket)
+    if request.method == 'POST':
+        clone_bracket_form = Clone_Bracket_Form(data=request.POST)
+        if clone_bracket_form.is_valid():
+            triggers_bracket = clone_bracket_form.cleaned_data['triggers_bracket']
+            triggers_competitors = clone_bracket_form.cleaned_data['triggers_competitors']
+            triggers_judges = clone_bracket_form.cleaned_data['triggers_judges']
+            bracket_instructions = {
+                'pk_instructions':{
+                },
+                'fk_instructions':{
+                }
+            }
+            # bracket
+            if triggers_bracket == 'Open':
+                bracket_instructions['pk_instructions']['status'] = 'Open'
+            elif triggers_bracket == 'Active':
+                bracket_instructions['pk_instructions']['status'] = 'Active'
+            # competitors
+            if triggers_competitors == 'with':
+                bracket_instructions['fk_instructions']['competitor'] = {
+                    'pk_instructions':{
+                        'beat': None,
+                        'beatby': None,
+                        'wins': 0,
+                        'losses': 0,
+                        'draws': 0,
+                        'byes': 0,
+                        'points': 0,
+                        #'status': 'Competing',
+                    },
+                    'fk_instructions':{}
+                }
+            # judges
+            if triggers_judges == 'with':
+                bracket_instructions['fk_instructions']['judge'] = {
+                    'pk_instructions':{
+                        'decisions': 0,
+                    },
+                    'fk_instructions':{}
+                }
+            new = bracket.clone(bracket_instructions) # clone changes self, new and bracket are same!
+            #bracket = Bracket.objects.get(pk=original_id) # restore bracket for debugging
+            return redirect(reverse('tourney:bracket:manage_bracket', kwargs={'bracket': new.id}))
+    else:
+        clone_bracket_form = Clone_Bracket_Form()
+    return render(request, 'mytournament/clone_bracket.html', {
+        "main_nav": main_nav(request.user, 'staff_view'),
+        "tasks_nav": tasks_nav(request.user, 'tourney'),
+        "steps_nav": steps_nav(request.user, 'clone_bracket', bid=bracket.id),
+        "bracket": bracket,
+        'clone_bracket_form': clone_bracket_form,
     })
 
 @staff_member_required
