@@ -94,8 +94,8 @@ def manage_roster_view(request, **kwargs):
             Roster.objects.all().delete()
             # create new roster
             for cid in ids:
-                print cid
-                member = Roster.objects.get_or_create(name=cid)
+                print cid.strip()
+                member = Roster.objects.get_or_create(name=cid.strip())
     form = Roster_Csv_Form()
     roster = Roster.objects.all()
     return render(request, 'mytournament/manage_roster.html', {
