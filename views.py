@@ -516,7 +516,6 @@ def Download_Mysql_View(request):
     staffmember = request.user.is_staff
     if not staffmember:
         return redirect('/')
-
     # send the results
     try:
         now = time.strftime('%Y-%m-%d-%H-%M-%S')         
@@ -530,7 +529,65 @@ def Download_Mysql_View(request):
         response['Content-Disposition'] = 'attachment; filename=' + file_name            
     except IOError:
         response = HttpResponseNotFound("error creating backup database file")
-
     return response
+
+@staff_member_required
+def download_ranks_view(request, **kwargs):
+    bid = kwargs["bracket"]
+    bracket = get_bracket(bid)
+    if bracket == None:
+        return redirect(reverse('tourney:default'))
+    try:        
+        # construct ranking for bracket participants
+        participants = dict()
+        # add competitor stats 
+        comps = Competitor.objects.filter(bracket=bracket, status='Competing').extra(select={'rank': 'wins - losses'}).order_by('-rank')
+        cut = int(len(comps) / 3.0)
+        cut_rank = comps[cut].rank 
+        for cc in comps:
+            if not cc.name in participants.keys():
+                participants[cc.name] = dict()
+            participants[cc.name]['game']=cc.game
+            participants[cc.name]['wins']=cc.wins
+            participants[cc.name]['losses']=cc.losses
+            participants[cc.name]['wins-losses']=(cc.wins - cc.losses)
+            if cc.rank >= cut_rank:
+                participants[cc.name]['rank-credit']=2
+            else:
+                participants[cc.name]['rank-credit']=1
+        # add judge stats
+        judges = Judge.objects.filter(bracket=bracket)
+        for vv in judges:
+            if not vv.name in participants.keys():
+                participants[vv.name] = dict()
+            participants[vv.name]['eligable']=vv.eligable
+            participants[vv.name]['decisions']=vv.decisions
+            if vv.eligable == vv.decisions:
+                participants[vv.name]['vote-credit']=1
+        # total credit calc
+        for pp in participants:
+            participants[pp]['total-credit'] = participants[pp].get('rank-credit', 0) + participants[pp].get('vote-credit', 0)
+        # create the download rows
+        lines = ['name,game,wins,losses,(wins-losses),rank-credit,eligable,decisions,vote-credit,total-credit']
+        for pp in participants:
+            lines.append(','.join([
+            pp,
+            participants[pp].get('game', ''),
+            str(participants[pp].get('wins', '')),
+            str(participants[pp].get('losses', '')),
+            str(participants[pp].get('wins-losses', '')),
+            str(participants[pp].get('rank-credit', '')),
+            str(participants[pp].get('eligable', '')),
+            str(participants[pp].get('decisions', '')),
+            str(participants[pp].get('vote-credit', '')),
+            str(participants[pp].get('total-credit', '')),
+            ]))
+        output = "\n".join(lines)
+        #response = HttpResponse("one,two \n1,2", content_type='application/octet-stream')
+        response = HttpResponse(output, content_type='application/octet-stream')
+        response['Content-Disposition'] = 'attachment; filename=ranks.csv'
+        return response
+    except IOError:
+        return redirect(reverse('tourney:bracket:review_bracket ', kwargs={'bracket': bracket.id}))
 
 

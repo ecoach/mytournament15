@@ -20,6 +20,7 @@ tournament_patterns = patterns('',
     url(r'^manage_judges/',  login_required(manage_judges_view), name='manage_judges'),
     url(r'^manage_competitors/',  login_required(manage_competitors_view), name='manage_competitors'),
     url(r'^review_bracket/',  login_required(review_bracket_view), name='review_bracket'),
+    url(r'^download_ranks/',  login_required(download_ranks_view), name='download_ranks'),
     url(r'^',      login_required(info_view), name='default'),
 )
 
