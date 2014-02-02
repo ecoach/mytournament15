@@ -543,7 +543,8 @@ def download_ranks_view(request, **kwargs):
         # add competitor stats 
         comps = Competitor.objects.filter(bracket=bracket, status='Competing').extra(select={'rank': 'wins - losses'}).order_by('-rank')
         cut = int(len(comps) / 3.0)
-        cut_rank = comps[cut].rank 
+        if len(comps) > cut:
+            cut_rank = comps[cut].rank 
         for cc in comps:
             if not cc.name in participants.keys():
                 participants[cc.name] = dict()
