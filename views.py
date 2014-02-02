@@ -94,7 +94,6 @@ def manage_roster_view(request, **kwargs):
             Roster.objects.all().delete()
             # create new roster
             for cid in ids:
-                print cid.strip()
                 member = Roster.objects.get_or_create(name=cid.strip())
     form = Roster_Csv_Form()
     roster = Roster.objects.all()
@@ -112,11 +111,8 @@ def new_bracket_view(request, **kwargs):
         new_bracket_form = New_Bracket_Form(data=request.POST)
         if new_bracket_form.is_valid():
             name = new_bracket_form.cleaned_data['name']
-            print name
             manager = new_bracket_form.cleaned_data['manager']
-            print manager
             feedback_option = new_bracket_form.cleaned_data['feedback_option']
-            print feedback_option
             bracket = Bracket(name=name, manager=manager, feedback_option=feedback_option)
             bracket.save()
             return redirect(reverse('tourney:bracket:manage_bracket', kwargs={'bracket': bracket.id}))
@@ -135,7 +131,6 @@ def choose_bracket_view(request, **kwargs):
         select_bracket_form = Select_Bracket_Form(data=request.POST)
         if select_bracket_form.is_valid():
             bracket = select_bracket_form.cleaned_data['bracket']
-            print bracket
             return redirect(reverse('tourney:bracket:manage_bracket', kwargs={'bracket': bracket.id}))
     else:
         select_bracket_form = Select_Bracket_Form()
@@ -158,16 +153,12 @@ def manage_bracket_view(request, **kwargs):
         edit_bracket_form = Edit_Bracket_Form(data=request.POST)
         if edit_bracket_form.is_valid():
             status = edit_bracket_form.cleaned_data['status']
-            print status
             bracket.status = status
             name = edit_bracket_form.cleaned_data['name']
-            print name
             bracket.name = name
             prompt = edit_bracket_form.cleaned_data['prompt']
-            print prompt
             bracket.prompt = prompt
             feedback_option = edit_bracket_form.cleaned_data['feedback_option']
-            print feedback_option
             bracket.feedback_option = feedback_option
             bracket.save()
             # take care of auto promotion
@@ -177,7 +168,6 @@ def manage_bracket_view(request, **kwargs):
                 bracket.save()
                 ids = [rr.name for rr in Roster.objects.all()]
                 for cid in ids:
-                    print cid
                     try:
                         # promote to competing from roster
                         comp = Competitor.objects.get(bracket=bracket, name=cid)
@@ -291,7 +281,6 @@ def manage_competitors_view(request, **kwargs):
             ids = cfile.read().splitlines()
             # create the sample
             for cid in ids:
-                print cid
                 try:
                     comp = Competitor.objects.get(bracket=bracket, name=cid)
                     comp.Set_Competing()
@@ -325,7 +314,6 @@ def manage_judges_view(request, **kwargs):
         )
         if importform.is_valid():
             trigger = importform.cleaned_data['trigger']
-            print trigger
             comps = Competitor.objects.filter(bracket=bracket, status='Competing')
             for cc in comps:
                 judge = Judge.objects.get_or_create(bracket=bracket, name=cc.name)
@@ -453,7 +441,6 @@ def vote_view(request, **kwargs):
     bracket = get_bracket(bid)
     if bracket == None:
         return redirect(reverse('tourney:default'))
-    print len(Bout.objects.all())
     # load the manager
     manager = eval(bracket.manager)(bracket=bracket)
     # run manager setup
