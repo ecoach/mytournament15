@@ -556,8 +556,11 @@ class Absolute_Order(Base_Tourney):
             self.bracket.save()
  
     def CreateRound(self, comps, rnd):
+        from random import shuffle
         bouts = [] # list of bouts in that round
         comps.sort(key=lambda x: (x.wins - x.losses), reverse=True) 
+        if rnd == 1: # first round is randomized (helps with clone experiment)
+            shuffle(comps)
         byes_tally = []
         #decisions_remaining = sum([x.eligable - x.decisions for x in self.Decisions_Remaining_Bracket()])
         # this does fold the sorted list :)
