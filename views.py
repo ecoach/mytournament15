@@ -538,11 +538,11 @@ def download_ranks_view(request, **kwargs):
             participants[cc.name]['game']=cc.game
             participants[cc.name]['wins']=cc.wins
             participants[cc.name]['losses']=cc.losses
-            participants[cc.name]['wins-losses']=(cc.wins - cc.losses)
+            participants[cc.name]['wins_minus_losses']=(cc.wins - cc.losses)
             if cc.rank >= cut_rank:
-                participants[cc.name]['rank-credit']=2
+                participants[cc.name]['rank_credit']=2
             else:
-                participants[cc.name]['rank-credit']=1
+                participants[cc.name]['rank_credit']=1
         # add judge stats
         judges = Judge.objects.filter(bracket=bracket)
         for vv in judges:
@@ -551,24 +551,24 @@ def download_ranks_view(request, **kwargs):
             participants[vv.name]['eligable']=vv.eligable
             participants[vv.name]['decisions']=vv.decisions
             if vv.eligable == vv.decisions:
-                participants[vv.name]['vote-credit']=1
+                participants[vv.name]['vote_credit']=1
         # total credit calc
         for pp in participants:
-            participants[pp]['total-credit'] = participants[pp].get('rank-credit', 0) + participants[pp].get('vote-credit', 0)
+            participants[pp]['total_credit'] = participants[pp].get('rank_credit', 0) + participants[pp].get('vote_credit', 0)
         # create the download rows
-        lines = ['name,game,wins,losses,(wins-losses),rank-credit,eligable,decisions,vote-credit,total-credit']
+        lines = ['name,game,wins,losses,(wins_minus_losses),rank_credit,eligable,decisions,vote_credit,total_credit']
         for pp in participants:
             lines.append(','.join([
             pp,
             participants[pp].get('game', ''),
             str(participants[pp].get('wins', '')),
             str(participants[pp].get('losses', '')),
-            str(participants[pp].get('wins-losses', '')),
-            str(participants[pp].get('rank-credit', '')),
+            str(participants[pp].get('wins_minus_losses', '')),
+            str(participants[pp].get('rank_credit', '')),
             str(participants[pp].get('eligable', '')),
             str(participants[pp].get('decisions', '')),
-            str(participants[pp].get('vote-credit', '')),
-            str(participants[pp].get('total-credit', '')),
+            str(participants[pp].get('vote_credit', '')),
+            str(participants[pp].get('total_credit', '')),
             ]))
         output = "\n".join(lines)
         #response = HttpResponse("one,two \n1,2", content_type='application/octet-stream')
