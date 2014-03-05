@@ -556,7 +556,7 @@ def download_ranks_view(request, **kwargs):
         for pp in participants:
             participants[pp]['total_credit'] = participants[pp].get('rank_credit', 0) + participants[pp].get('vote_credit', 0)
         # create the download rows
-        lines = ['name,game,wins,losses,(wins_minus_losses),rank_credit,eligable,decisions,vote_credit,total_credit']
+        lines = ['name,game,wins,losses,wins_minus_losses,rank_credit,eligable,decisions,vote_credit,total_credit']
         for pp in participants:
             lines.append(','.join([
             pp,
